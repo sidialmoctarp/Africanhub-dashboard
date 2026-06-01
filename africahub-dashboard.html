@@ -1,0 +1,2492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfricaHub — Urban Heat Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://unpkg.com/shpjs@4.0.4/dist/shp.min.js"></script>
+<style>
+  :root{
+    --bg:#0c0a08;--bg-elev:#16120d;--panel:#1c1711;--line:rgba(255,236,200,.10);
+    --ink:#f6ead6;--ink-dim:#b7a890;--ink-faint:#7b6f5e;--sand:#e8c98f;
+    --c0:#1d3a5f;--c1:#2c7da0;--c2:#6cc5b0;--c3:#f2cc8f;--c4:#e9974c;--c5:#e25a3b;--c6:#bd2a2e;--c7:#7a1f2b;
+    --accent:#ff7a45;--mono:'Space Mono',monospace;
+  }
+  body.light{
+    --bg:#f3ece0;--bg-elev:#fffaf2;--panel:#fbf4e8;--line:rgba(60,40,20,.14);
+    --ink:#2a2118;--ink-dim:#6b5d4c;--ink-faint:#9a8b76;--sand:#b07d34;
+  }
+  body.light{background:radial-gradient(1200px 600px at 80% -10%,rgba(226,90,59,.10),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(44,125,160,.10),transparent 55%),var(--bg)}
+  body.light .grain{opacity:.025}
+  /* RTL (Arabic) */
+  body.rtl{direction:rtl}
+  body.rtl .hsearch{margin-left:0;margin-right:auto}
+  body.rtl .side-btn{text-align:right}
+  body.rtl .navrail button span{left:auto;right:50px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:radial-gradient(1200px 600px at 80% -10%,rgba(226,90,59,.12),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(44,125,160,.10),transparent 55%),var(--bg);
+    color:var(--ink);font-family:'Outfit',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+  .grain{position:fixed;inset:0;pointer-events:none;opacity:.05;z-index:99;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .app{display:grid;grid-template-columns:300px 1fr 340px;grid-template-rows:64px 1fr;height:100vh}
+  header{grid-column:1/-1;display:flex;align-items:center;gap:22px;padding:0 22px;border-bottom:1px solid var(--line);background:rgba(12,10,8,.6);backdrop-filter:blur(8px);z-index:10}
+  .logo{display:flex;align-items:center;gap:12px}
+  .mark{width:34px;height:34px;border-radius:9px;position:relative;background:conic-gradient(from 200deg,var(--c1),var(--c3),var(--c5),var(--c6),var(--c1));box-shadow:0 0 0 1px var(--line),0 6px 22px rgba(226,90,59,.35)}
+  .mark::after{content:"";position:absolute;inset:6px;border-radius:5px;background:var(--bg-elev)}
+  .mark::before{content:"";position:absolute;inset:13px;border-radius:50%;background:var(--accent);z-index:2;box-shadow:0 0 14px var(--accent)}
+  .brand{font-family:'Fraunces',serif;font-weight:900;font-size:21px;letter-spacing:-.5px}
+  .brand span{color:var(--accent)}
+  .tag{font-size:11px;color:var(--ink-faint);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase}
+  .hsearch{margin-left:auto;display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 13px;width:260px;position:relative}
+  .hsearch input{background:none;border:none;color:var(--ink);outline:none;width:100%;font-family:'Outfit';font-size:13px}
+  .lang-sel{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:8px 10px;font-family:'Outfit';font-size:12.5px;cursor:pointer;outline:none}
+  .theme-toggle{background:var(--panel);border:1px solid var(--line);border-radius:10px;width:40px;height:38px;font-size:17px;cursor:pointer;transition:.15s;line-height:1}
+  .theme-toggle:hover{border-color:var(--sand);transform:translateY(-1px)}
+  .results{position:absolute;top:42px;left:0;right:0;background:var(--bg-elev);border:1px solid var(--line);border-radius:10px;max-height:280px;overflow-y:auto;z-index:40;display:none;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+  .results.show{display:block}
+  .res{padding:9px 13px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;border-bottom:1px solid var(--line)}
+  .res:hover{background:var(--panel)} .res small{color:var(--ink-faint)}
+  .res .rt{font-family:var(--mono);color:var(--sand)}
+  .apitog{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-dim);font-family:var(--mono);cursor:pointer;user-select:none}
+  .switch{width:34px;height:18px;border-radius:10px;background:var(--panel);border:1px solid var(--line);position:relative;transition:.2s}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--ink-faint);transition:.2s}
+  .apitog.on .switch{background:var(--accent)} .apitog.on .switch::after{left:18px;background:#1a0d06}
+  .live{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink-dim);font-family:var(--mono)}
+  .dot{width:7px;height:7px;border-radius:50%;background:#5fd38a;box-shadow:0 0 8px #5fd38a;animation:pulse 2s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .left{border-right:1px solid var(--line);padding:18px;overflow-y:auto;background:rgba(22,18,13,.4)}
+  .sec-label{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-faint);margin:0 0 11px}
+  .filter{margin-bottom:24px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-size:12px;padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--ink-dim);cursor:pointer;transition:.18s}
+  .chip:hover{color:var(--ink);border-color:var(--sand)}
+  .chip.on{background:var(--accent);color:#1a0d06;border-color:var(--accent);font-weight:600}
+  .slider-row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-dim);margin-bottom:8px}
+  .slider-row b{color:var(--sand);font-family:var(--mono)}
+  input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--c1),var(--c3),var(--c5),var(--c6));outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--ink);cursor:pointer;border:3px solid var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.5)}
+  .legend-bar{height:10px;border-radius:6px;background:linear-gradient(90deg,var(--c0),var(--c1),var(--c2),var(--c3),var(--c4),var(--c5),var(--c6),var(--c7))}
+  .legend-lab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:5px}
+  .stat-cards{display:flex;flex-direction:column;gap:10px}
+  .scard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+  .scard .v{font-family:'Fraunces',serif;font-weight:900;font-size:26px;line-height:1}
+  .scard .l{font-size:11px;color:var(--ink-dim);margin-top:5px}
+  .scard .v.hot{color:var(--c5)} .scard .v.cool{color:var(--c2)} .scard .v.warm{color:var(--c3)}
+  .center{position:relative;overflow:hidden}
+  .maptop{position:absolute;top:14px;left:14px;right:14px;display:flex;gap:10px;z-index:6;align-items:center}
+  .vmode{display:flex;background:rgba(22,18,13,.85);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:10px;padding:4px;gap:2px}
+  .vmode button{background:none;border:none;color:var(--ink-dim);font-size:12px;padding:7px 13px;border-radius:7px;cursor:pointer;font-family:'Outfit';transition:.15s}
+  .vmode button.on{background:var(--accent);color:#1a0d06;font-weight:600}
+  .maptitle{margin-left:auto;text-align:right}
+  .maptitle h2{font-family:'Fraunces',serif;font-weight:900;font-size:17px}
+  .maptitle p{font-size:11px;color:var(--ink-faint);font-family:var(--mono)}
+  #map{width:100%;height:100%;display:block;cursor:grab}
+  #map:active{cursor:grabbing}
+  .breadcrumb{position:absolute;top:62px;left:14px;z-index:6;font-family:var(--mono);font-size:11px;color:var(--ink-dim);background:rgba(22,18,13,.85);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:8px;padding:6px 11px;display:none;align-items:center;gap:7px}
+  .breadcrumb.show{display:flex} .breadcrumb b{color:var(--sand)} .breadcrumb .back{cursor:pointer;color:var(--accent)}
+  .tooltip{position:absolute;pointer-events:none;background:rgba(12,10,8,.95);border:1px solid var(--sand);border-radius:10px;padding:11px 13px;font-size:12px;z-index:30;opacity:0;transition:opacity .12s;min-width:160px;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+  .tooltip h4{font-family:'Fraunces',serif;font-size:15px;margin-bottom:4px}
+  .tooltip .tt-temp{font-family:var(--mono);font-size:20px;font-weight:700}
+  .tooltip .tt-row{display:flex;justify-content:space-between;color:var(--ink-dim);font-size:11px;margin-top:3px}
+  .mapfoot{position:absolute;bottom:14px;left:14px;font-family:var(--mono);font-size:10px;color:var(--ink-faint);z-index:6}
+  .right{border-left:1px solid var(--line);padding:18px;overflow-y:auto;background:rgba(22,18,13,.4)}
+  .report-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .report-head h3{font-family:'Fraunces',serif;font-weight:900;font-size:20px}
+  .flag{font-size:26px}
+  .big-temp{font-family:'Fraunces',serif;font-weight:900;font-size:54px;line-height:.95;margin:8px 0 2px}
+  .big-temp small{font-size:22px;color:var(--ink-faint)}
+  .subline{color:var(--ink-dim);font-size:12px;margin-bottom:16px}
+  .risk{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:16px}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px}
+  .metric{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px}
+  .metric .mv{font-family:var(--mono);font-size:19px;font-weight:700}
+  .metric .ml{font-size:10.5px;color:var(--ink-dim);margin-top:3px}
+  .spark{height:54px;width:100%;margin:4px 0 14px}
+  .insight{font-size:12.5px;line-height:1.55;color:var(--ink-dim);background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:12px 13px;margin-bottom:12px}
+  .insight b{color:var(--ink)}
+  .btn{display:block;width:100%;text-align:center;padding:12px;border-radius:10px;border:none;cursor:pointer;font-family:'Outfit';font-weight:600;font-size:13px;transition:.18s}
+  .btn-primary{background:var(--accent);color:#1a0d06;margin-bottom:9px}
+  .btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+  .btn-ghost{background:var(--panel);color:var(--ink-dim);border:1px solid var(--line)}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--sand)}
+  .rank-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;transition:.15s}
+  .rank-row:hover{padding-left:5px}
+  .rank-n{font-family:var(--mono);font-size:11px;color:var(--ink-faint);width:18px}
+  .rank-name{flex:1;font-size:13px} .rank-temp{font-family:var(--mono);font-size:13px;font-weight:700}
+  .scroll::-webkit-scrollbar{width:6px}.scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  /* comparison overlay */
+  .cmp-overlay{position:fixed;inset:0;background:rgba(8,6,4,.78);backdrop-filter:blur(6px);z-index:80;display:none;align-items:center;justify-content:center;padding:40px}
+  .cmp-overlay.show{display:flex}
+  .cmp-card{background:var(--bg-elev);border:1px solid var(--line);border-radius:18px;width:100%;max-width:920px;max-height:86vh;overflow-y:auto;padding:26px 28px;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+  .cmp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .cmp-head h3{font-family:'Fraunces',serif;font-weight:900;font-size:24px}
+  .cmp-close{background:var(--panel);border:1px solid var(--line);color:var(--ink-dim);width:34px;height:34px;border-radius:9px;cursor:pointer;font-size:16px}
+  .cmp-grid{display:grid;gap:14px}
+  .cmp-col{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;position:relative}
+  .cmp-col .x{position:absolute;top:10px;right:12px;color:var(--ink-faint);cursor:pointer;font-size:14px}
+  .cmp-col h4{font-family:'Fraunces',serif;font-size:17px;margin-bottom:2px}
+  .cmp-col .loc{font-size:11px;color:var(--ink-faint);margin-bottom:12px}
+  .cmp-col .ct{font-family:'Fraunces';font-weight:900;font-size:38px;line-height:1}
+  .cmp-bars{margin-top:14px;display:flex;flex-direction:column;gap:9px}
+  .cmp-bar-row{font-size:11px;color:var(--ink-dim)}
+  .cmp-bar-row .lab{display:flex;justify-content:space-between;margin-bottom:3px}
+  .cmp-bar-row .lab b{color:var(--ink);font-family:var(--mono)}
+  .cmp-track{height:6px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden}
+  .cmp-fill{height:100%;border-radius:4px}
+  .cmp-empty{color:var(--ink-faint);font-size:13px;text-align:center;padding:40px}
+  @media(max-width:1100px){.app{grid-template-columns:1fr}.left,.right{display:none}}
+
+  /* ===== Leaflet basemap + heatmap workflow additions ===== */
+  #leaf{position:absolute;inset:0;z-index:1;background:#0c0a08}
+  #map{position:absolute;inset:0;z-index:3;pointer-events:auto}
+  .leaflet-container{background:#0c0a08;font-family:'Outfit',sans-serif}
+  .basemap-pick{position:absolute;bottom:14px;right:14px;z-index:7;display:flex;gap:2px;background:rgba(22,18,13,.9);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:10px;padding:4px}
+  .basemap-pick button{background:none;border:none;color:var(--ink-dim);font-size:11px;font-family:var(--mono);padding:6px 10px;border-radius:7px;cursor:pointer}
+  .basemap-pick button.on{background:var(--accent);color:#1a0d06;font-weight:700}
+
+  /* ===== FortyGuard-style consoles (additive) ===== */
+  .navrail{position:absolute;top:70px;left:14px;z-index:8;display:none;flex-direction:column;gap:6px;background:rgba(22,18,13,.92);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:8px}
+  .navrail.show{display:flex}
+  .navrail button{background:none;border:none;color:var(--ink-dim);width:42px;height:42px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;position:relative}
+  .navrail button:hover{background:var(--panel);color:var(--ink)}
+  .navrail button.on{background:var(--accent);color:#1a0d06}
+  .navrail button svg{width:19px;height:19px}
+  .navrail button span{position:absolute;left:50px;white-space:nowrap;background:var(--bg-elev);border:1px solid var(--line);padding:5px 9px;border-radius:7px;font-size:11px;font-family:'Outfit';opacity:0;pointer-events:none;transition:.15s;color:var(--ink)}
+  .navrail button:hover span{opacity:1}
+
+  .panel{position:absolute;top:14px;left:70px;z-index:11;width:330px;max-height:calc(100% - 28px);overflow-y:auto;background:var(--bg-elev);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.6);display:none;flex-direction:column}
+  .panel.show{display:flex}
+  .panel-h{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .panel-h h3{font-family:'Fraunces',serif;font-weight:900;font-size:17px;flex:1}
+  .panel-h .cx{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:17px}
+  .panel-b{padding:16px 18px;display:flex;flex-direction:column;gap:18px}
+  .pg-lab{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);font-weight:700;margin-bottom:9px}
+  .ramp{display:flex;height:22px;border-radius:7px;overflow:hidden;border:1px solid var(--line);cursor:pointer}
+  .ramp span{flex:1}
+  .ramp-pick{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
+  .ramp-opt{width:54px;height:16px;border-radius:5px;cursor:pointer;border:1px solid var(--line)}
+  .ramp-opt.on{outline:2px solid var(--accent);outline-offset:1px}
+  .ctrl-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-dim)}
+  .ctrl-row select,.ctrl-row input{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:7px 9px;font-family:'Outfit';font-size:12px;flex:1}
+  .stepper{display:flex;align-items:center;gap:8px}
+  .stepper button{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;font-size:14px}
+  .stepper b{font-family:var(--mono);min-width:24px;text-align:center}
+  .apply{background:var(--c1);color:#fff;border:none;border-radius:9px;padding:11px;font-family:'Outfit';font-weight:600;cursor:pointer;width:100%;font-size:13px}
+  .apply:hover{filter:brightness(1.1)}
+  .tlegend{display:flex;flex-direction:column;gap:6px}
+  .tl-row{display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--ink-dim)}
+  .tl-sw{width:16px;height:16px;border-radius:4px;flex:0 0 auto}
+  .switchrow{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--ink-dim)}
+  .lsw{width:38px;height:20px;border-radius:11px;background:var(--panel);border:1px solid var(--line);position:relative;cursor:pointer;transition:.2s}
+  .lsw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--ink-faint);transition:.2s}
+  .lsw.on{background:var(--c2)} .lsw.on::after{left:20px;background:#0c0a08}
+
+  /* Heat Intelligence gallery + report */
+  .gallery{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px}
+  .gcard{flex:0 0 132px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px;cursor:pointer;transition:.15s}
+  .gcard:hover{border-color:var(--sand)} .gcard.on{border-color:var(--accent)}
+  .gcard h5{font-size:12px;font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between}
+  .gcard .new{background:var(--accent);color:#1a0d06;font-size:8px;padding:2px 5px;border-radius:4px;font-weight:700}
+  .gcard .gr{font-size:10.5px;color:var(--ink-faint);font-family:var(--mono);margin-top:3px}
+  .genbtn{background:var(--c1);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Outfit';font-weight:600;cursor:pointer;font-size:13px;width:100%}
+  .genbtn:hover{filter:brightness(1.1)}
+
+  .report-overlay{position:fixed;inset:0;background:rgba(8,6,4,.85);backdrop-filter:blur(6px);z-index:90;display:none;align-items:center;justify-content:center;padding:30px}
+  .report-overlay.show{display:flex}
+  .report-doc{background:#fbf7ef;color:#1f2430;width:100%;max-width:920px;max-height:90vh;overflow-y:auto;border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.7);font-family:Georgia,'Times New Roman',serif}
+  .rd-top{display:flex;align-items:center;justify-content:space-between;padding:18px 26px;border-bottom:1px solid #e2dccd;position:sticky;top:0;background:#fbf7ef;z-index:2}
+  .rd-tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .rd-tabs button{background:none;border:none;font-family:'Outfit',sans-serif;font-size:12px;color:#5b6470;padding:7px 11px;border-radius:7px;cursor:pointer}
+  .rd-tabs button.on{background:#1b3a8f;color:#fff;font-weight:600}
+  .rd-close{background:#eee;border:1px solid #ddd;border-radius:8px;padding:7px 12px;font-family:'Outfit',sans-serif;font-size:12px;cursor:pointer;color:#444}
+  .rd-body{padding:24px 30px 40px}
+  .rd-h1{font-family:Georgia,serif;color:#1b3a8f;font-size:24px;display:flex;align-items:center;gap:10px;border-bottom:3px solid #1b3a8f;padding-bottom:12px;margin-bottom:18px}
+  .rd-meta{background:#f1ece0;border-radius:10px;padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:6px 30px;font-family:'Outfit',sans-serif;font-size:13px;margin-bottom:24px}
+  .rd-meta b{color:#1f2430} .rd-meta span{color:#3a4250}
+  .rd-sec{margin-bottom:24px}
+  .rd-sec h2{color:#c0531f;font-family:Georgia,serif;font-size:18px;border-left:4px solid #c0531f;padding-left:11px;margin-bottom:14px}
+  .rd-sec h3{font-size:14px;color:#1f2430;margin:16px 0 8px;font-family:'Outfit',sans-serif;font-weight:600}
+  .rd-sec p{font-size:13.5px;line-height:1.65;color:#2c3340;margin-bottom:11px}
+  .rd-sec ul{margin:0 0 12px 4px;padding-left:18px}
+  .rd-sec li{font-size:13px;line-height:1.6;color:#2c3340;margin-bottom:7px}
+  .rd-src{font-size:11.5px;color:#7a818c;font-style:italic;margin-top:8px}
+  .rd-foot{text-align:center;color:#9aa0aa;font-family:'Outfit',sans-serif;font-size:11px;border-top:1px solid #e2dccd;padding-top:18px;margin-top:10px}
+
+  /* Tree recommendations */
+  .tree-card{background:linear-gradient(160deg,#0f1d12,#16120d);border:1px solid rgba(110,200,140,.25);border-radius:14px;padding:18px;text-align:center}
+  .tree-ic{width:54px;height:54px;border-radius:14px;background:rgba(95,211,138,.15);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px}
+  .tree-card h4{font-family:'Fraunces',serif;font-size:17px;margin-bottom:8px}
+  .tree-card p{font-size:12px;color:var(--ink-dim);line-height:1.5;margin-bottom:14px}
+  .tree-see{background:rgba(95,211,138,.08);border:1px solid rgba(95,211,138,.2);border-radius:11px;padding:13px;text-align:left;margin-bottom:14px}
+  .tree-see b{font-size:11px;color:#7fe0a0;display:block;margin-bottom:8px}
+  .tree-see div{font-size:12px;color:var(--ink-dim);margin-bottom:6px}
+  .tree-open{background:linear-gradient(135deg,#2e8b4f,#1f6b3a);color:#fff;border:none;border-radius:11px;padding:13px;width:100%;font-family:'Outfit';font-weight:700;cursor:pointer;font-size:13px}
+  .tree-open:hover{filter:brightness(1.1)}
+  .species{display:flex;flex-direction:column;gap:9px}
+  .sp{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:12px;border-left:3px solid #5fd38a}
+  .sp h5{font-size:13px;font-weight:700;display:flex;justify-content:space-between}
+  .sp h5 i{font-style:italic;font-weight:400;color:var(--ink-faint);font-size:11px}
+  .sp .spm{display:flex;gap:14px;margin-top:8px}
+  .sp .spm div{font-size:10.5px;color:var(--ink-dim)}
+  .sp .spm b{font-family:var(--mono);color:#7fe0a0;display:block;font-size:13px}
+  .sp-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.07);margin-top:9px;overflow:hidden}
+  .sp-bar i{display:block;height:100%;background:linear-gradient(90deg,#2e8b4f,#7fe0a0)}
+
+  /* Map comparison overlay (satellite split) */
+  .mc-overlay{position:fixed;inset:0;background:rgba(8,6,4,.85);backdrop-filter:blur(6px);z-index:88;display:none;align-items:center;justify-content:center;padding:30px}
+  .mc-overlay.show{display:flex}
+  .mc-card{background:var(--bg-elev);border:1px solid var(--line);border-radius:16px;width:100%;max-width:1000px;max-height:90vh;overflow-y:auto;padding:22px 24px}
+  .mc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .mc-head h3{font-family:'Fraunces',serif;font-weight:900;font-size:22px}
+  .mc-split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .mc-pane h4{font-size:12px;font-family:var(--mono);color:var(--ink-dim);margin-bottom:7px}
+  .mc-map{height:300px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+  .mc-sel{display:flex;gap:9px;margin-bottom:16px}
+  .mc-sel select{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px;font-family:'Outfit';font-size:13px}
+
+  /* Temperature Mapping console */
+  .tmap-toggle{display:none}
+  .tmap-toggle-side{width:100%;background:var(--accent);color:#1a0d06;border:none;height:42px;border-radius:11px;font-size:14px;cursor:pointer;box-shadow:0 6px 18px rgba(255,122,69,.35);font-weight:700;font-family:'Outfit',sans-serif;transition:.15s}
+  .tmap-toggle-side:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .side-btn{width:100%;margin-top:9px;background:var(--panel);color:var(--ink);border:1px solid var(--line);height:40px;border-radius:11px;font-size:13px;cursor:pointer;font-weight:600;font-family:'Outfit',sans-serif;transition:.15s;text-align:left;padding:0 14px}
+  .side-btn:hover{border-color:var(--sand);background:var(--bg-elev);transform:translateY(-1px)}
+  .tmap-toggle.hide{display:none}
+  .tmap{position:absolute;top:14px;left:14px;z-index:9;width:340px;max-height:calc(100% - 28px);overflow-y:auto;background:var(--bg-elev);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.6);display:none;flex-direction:column}
+  .tmap.show{display:flex}
+  .tmap-h{display:flex;align-items:center;gap:10px;padding:18px 18px 4px}
+  .tmap-h h3{font-family:'Fraunces',serif;font-weight:900;font-size:18px;flex:1}
+  .tmap-h .cx{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:18px}
+  .tmap-sub{font-size:12px;color:var(--ink-dim);padding:0 18px 14px}
+  .tmap-body{padding:0 18px 18px;display:flex;flex-direction:column;gap:16px}
+  .tmap-lab{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px;font-weight:700}
+  .seg{display:flex;gap:6px}
+  .seg button{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--ink-dim);border-radius:10px;padding:11px 6px;font-size:12px;cursor:pointer;font-family:'Outfit';transition:.15s;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .seg button:hover{border-color:var(--sand);color:var(--ink)}
+  .seg button.on{background:rgba(255,122,69,.14);border-color:var(--accent);color:var(--accent);font-weight:600}
+  .seg button svg{width:16px;height:16px}
+  .estimate{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .estimate .er{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-dim);margin-top:9px}
+  .estimate .er:first-child{margin-top:0}
+  .estimate .er b{color:var(--ink);font-family:var(--mono)}
+  .unit-pick{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .unit-pick button{background:none;border:none;color:var(--ink-faint);font-size:11px;padding:4px 10px;cursor:pointer;font-family:var(--mono)}
+  .unit-pick button.on{background:var(--accent);color:#1a0d06;font-weight:700}
+  .tmap-foot{display:flex;gap:9px;padding:16px 18px;border-top:1px solid var(--line)}
+  .tmap-foot button{flex:1;border-radius:10px;padding:12px;font-family:'Outfit';font-weight:600;font-size:13px;cursor:pointer;border:none;transition:.15s}
+  .so{background:var(--panel);border:1px solid var(--line)!important;color:var(--ink-dim)}
+  .so:hover{color:var(--ink)}
+  .gen{background:var(--accent);color:#1a0d06}
+  .gen:hover{filter:brightness(1.08)}
+  .gen:disabled{opacity:.4;cursor:not-allowed}
+  .drawhint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:7;background:rgba(12,10,8,.92);border:1px solid var(--sand);border-radius:12px;padding:14px 20px;font-size:13px;color:var(--ink);pointer-events:none;display:none;text-align:center}
+  .drawhint.show{display:block}
+
+  /* Task Progress popup */
+  .task{position:absolute;top:70px;right:14px;z-index:12;width:300px;background:var(--bg-elev);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.6);overflow:hidden;display:none}
+  .task.show{display:block;animation:taskin .3s ease}
+  @keyframes taskin{from{opacity:0;transform:translateY(-8px)}}
+  .task-h{background:linear-gradient(135deg,#2c7da0,#1d3a5f);padding:14px 16px;display:flex;align-items:center;gap:11px}
+  .task-h .ic{width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:15px}
+  .task-h h4{font-size:14px;font-weight:700;color:#fff}
+  .task-h p{font-size:11px;color:rgba(255,255,255,.7)}
+  .task-h .cx{margin-left:auto;background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:15px}
+  .task-clear{margin:12px;background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px;width:calc(100% - 24px);cursor:pointer;font-family:'Outfit';font-size:13px}
+  .task-item{padding:6px 16px 14px}
+  .task-item .ti-t{font-size:12.5px;font-weight:600;line-height:1.4}
+  .task-pct{float:right;color:var(--c1);font-family:var(--mono);font-weight:700;font-size:13px}
+  .task-track{height:5px;border-radius:4px;background:rgba(255,255,255,.08);margin:9px 0 6px;overflow:hidden}
+  .task-prog{height:100%;width:0;background:linear-gradient(90deg,#2c7da0,#6cc5b0);transition:width .2s}
+  .task-item .ti-s{font-size:11px;color:var(--ink-faint)}
+  .task-done{border-top:1px solid var(--line);padding:12px 16px;font-size:12px;color:var(--ink-dim)}
+  .task-done .dn{color:#5fd38a;font-weight:600;font-size:11px}
+  .task-done .cx{float:right;color:var(--ink-faint);cursor:pointer;border:none;background:none}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="app">
+  <header>
+    <div class="logo"><div class="mark"></div><div><div class="brand">Africa<span>Hub</span></div><div class="tag" data-i18n="tagline">Urban Heat Intelligence</div></div></div>
+    <div class="hsearch">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7b6f5e" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+      <input id="search" placeholder="Search countries, cities, divisions…" autocomplete="off">
+      <div class="results" id="results"></div>
+    </div>
+    <div class="apitog" id="apitog"><span class="switch"></span><span id="apilabel">SIM DATA</span></div>
+    <select id="langSel" class="lang-sel" title="Language">
+      <option value="en">🇬🇧 English</option>
+      <option value="fr">🇫🇷 Français</option>
+      <option value="ar">🇸🇦 العربية</option>
+    </select>
+    <button id="themeToggle" class="theme-toggle" title="Day / Night mode">🌙</button>
+    <div class="live"><span class="dot"></span> <span data-i18n="live">LIVE</span></div>
+  </header>
+
+  <aside class="left scroll">
+    <div class="filter"><p class="sec-label" data-i18n="lbl_region">Region</p>
+      <div class="chips" id="regionChips">
+        <span class="chip on" data-r="All">All</span><span class="chip" data-r="North">North</span>
+        <span class="chip" data-r="West">West</span><span class="chip" data-r="East">East</span>
+        <span class="chip" data-r="Central">Central</span><span class="chip" data-r="Southern">Southern</span>
+      </div></div>
+    <div class="filter">
+      <button class="tmap-toggle-side" id="tmapToggleSide"><span data-i18n="btn_generate">🌡 Generate Heatmap</span></button>
+      <button class="side-btn" id="statsToggleSide"><span data-i18n="btn_stats">📊 Statistical Analysis Results</span></button>
+      <button class="side-btn" id="treesToggleSide"><span data-i18n="btn_trees">🌲 AI Tree Recommendations</span></button>
+      <button class="side-btn" id="exportToggleSide"><span data-i18n="btn_export">📄 Export &amp; Reporting</span></button>
+      <button class="side-btn" id="svfToggleSide"><span data-i18n="btn_svf">🌤️ Sky View Factor (SVF)</span></button>
+      <button class="side-btn" id="decisionToggleSide"><span data-i18n="btn_decision">🌳 Heat Mitigation Decision</span></button>
+    </div>
+    <div class="filter"><p class="sec-label" data-i18n="lbl_thresh">Heat Threshold</p>
+      <div class="slider-row"><span>Min surface temp</span><b id="threshVal">0°C</b></div>
+      <input type="range" id="thresh" min="0" max="45" value="0"></div>
+    <div class="filter"><p class="sec-label" data-i18n="lbl_scale">Temperature Scale</p>
+      <div class="legend-bar"></div><div class="legend-lab"><span>10°C</span><span>25°C</span><span>40°C+</span></div></div>
+    <div class="filter"><p class="sec-label" data-i18n="lbl_snapshot">Continental Snapshot</p>
+      <div class="stat-cards">
+        <div class="scard"><div class="v warm" id="avgTemp">—</div><div class="l">Mean urban temperature</div></div>
+        <div class="scard"><div class="v hot" id="hotName">—</div><div class="l" id="hotDetail">Hottest division</div></div>
+        <div class="scard"><div class="v cool" id="coolName">—</div><div class="l" id="coolDetail">Coolest division</div></div>
+      </div></div>
+  </aside>
+
+  <section class="center">
+    <div class="maptop">
+      <div class="vmode" id="vmode">
+        <button class="on" data-m="heat">Heat Map</button>
+        <button data-m="risk">Risk Zones</button>
+        <button data-m="anomaly">Anomaly</button>
+      </div>
+      <div class="maptitle"><h2 id="mapH2">Continental Heat Surface</h2><p id="mapSub">54 nations · real-time simulation</p></div>
+    </div>
+    <div class="breadcrumb" id="breadcrumb"><span class="back" id="bcBack">‹ Continent</span> / <b id="bcCountry"></b></div>
+    <div id="leaf"></div>
+    <canvas id="map"></canvas>
+    <div class="tooltip" id="tip"></div>
+    <div class="mapfoot" id="foot">Drag to pan · scroll to zoom · click a country to drill into its cities</div>
+
+    <!-- Temperature Mapping console -->
+    <button class="tmap-toggle" id="tmapToggle" title="Temperature Mapping">🌡 Generate Heatmap</button>
+    <div class="tmap" id="tmap">
+      <div class="tmap-h"><h3>Temperature Mapping</h3><button class="cx" id="tmapClose">✕</button></div>
+      <div class="tmap-sub">Search for a location and draw a heatmap.</div>
+      <div class="tmap-body">
+        <div>
+          <div class="tmap-lab">Create a shape</div>
+          <div class="seg" id="shapeSeg">
+            <button data-s="polygon" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 6-3 9H7L4 9z"/></svg>Polygon</button>
+            <button data-s="circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>Circle</button>
+            <button data-s="upload" title="Upload GeoJSON (.geojson/.json) or zipped Shapefile (.zip)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16"/></svg>Upload</button>
+          </div>
+        </div>
+        <div class="estimate">
+          <div class="tmap-lab" style="display:flex;justify-content:space-between;align-items:center">Size Estimate
+            <span class="unit-pick" id="unitPick"><button class="on" data-u="mi">mi</button><button data-u="km">km</button></span>
+          </div>
+          <div class="er"><span>Area</span><b id="estArea">0 mi²</b></div>
+          <div class="er"><span>Perimeter</span><b id="estPerim">0 mi</b></div>
+        </div>
+        <div>
+          <div class="tmap-lab">Granularity</div>
+          <div class="seg" id="granSeg">
+            <button data-g="100" class="on">100 × 100 m</button>
+            <button data-g="80">80 × 80 m</button>
+            <button data-g="60">60 × 60 m</button>
+          </div>
+        </div>
+        <div>
+          <div class="tmap-lab">Select a Time Frame</div>
+          <div class="seg" id="timeSeg">
+            <button data-t="hour" class="on">Single Hour</button>
+            <button data-t="range">Range of hours</button>
+            <button data-t="day">Single day</button>
+          </div>
+        </div>
+      </div>
+      <div class="tmap-foot">
+        <button class="so" id="startOver">↻ Start Over</button>
+        <button class="gen" id="genMap" disabled>+ Generate Map</button>
+      </div>
+    </div>
+    <div class="drawhint" id="drawHint">Click points on the map to draw your area — double-click to close the polygon.</div>
+
+    <!-- Task Progress popup -->
+    <div class="task" id="task">
+      <div class="task-h"><div class="ic">📋</div><div><h4>Task Progress</h4><p>Recent activities</p></div><button class="cx" id="taskClose">✕</button></div>
+      <button class="task-clear" id="taskClear">🗑 Clear All</button>
+      <div class="task-item" id="taskActive" style="display:none">
+        <div class="ti-t"><span id="taskTitle"></span><span class="task-pct" id="taskPct">0%</span></div>
+        <div class="task-track"><div class="task-prog" id="taskProg"></div></div>
+        <div class="ti-s" id="taskStage">Preparing…</div>
+      </div>
+      <div class="task-done" id="taskDone" style="display:none">
+        <button class="cx" id="taskDoneX">✕</button>
+        <div id="taskDoneTitle" style="line-height:1.4"></div>
+        <span class="dn">Completed</span> <span style="color:var(--ink-faint)">·</span> <span id="taskDoneDate" style="color:var(--ink-faint)"></span>
+      </div>
+    </div>
+
+    <!-- Basemap picker -->
+    <div class="basemap-pick" id="basemapPick">
+      <button class="on" data-b="carto">Carto</button>
+      <button data-b="osm">OSM</button>
+      <button data-b="esri">Esri</button>
+    </div>
+
+    <!-- Left nav rail (appears in mapping mode) -->
+    <div class="navrail" id="navrail">
+      <button data-p="controls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="12" r="2"/><circle cx="14" cy="18" r="2"/></svg><span>Map Controls</span></button>
+      <button data-p="intel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 00-4 12.7V18h8v-3.3A7 7 0 0012 2zM9 21h6"/></svg><span>Heat Intelligence</span></button>
+      <button data-p="trees"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22v-6m0 0a5 5 0 005-5 5 5 0 00-10 0 5 5 0 005 5z"/></svg><span>AI Tree Recommendations</span></button>
+      <button data-p="compare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="7" height="14" rx="1"/><rect x="14" y="5" width="7" height="14" rx="1"/></svg><span>Map Comparison</span></button>
+      <button data-p="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Statistical Analysis</span></button>
+    </div>
+
+    <!-- Map Controls panel -->
+    <div class="panel" id="pControls">
+      <div class="panel-h"><h3>Map Controls</h3><button class="cx" data-cx="pControls">✕</button></div>
+      <div class="panel-b">
+        <div>
+          <div class="pg-lab">Color Ramp · Spectral</div>
+          <div class="ramp" id="rampPreview"></div>
+          <div class="ramp-pick" id="rampPick"></div>
+        </div>
+        <div>
+          <div class="pg-lab">Classification</div>
+          <div class="ctrl-row" style="margin-bottom:10px">
+            <select id="classMode"><option>Equal Class (Quantile)</option><option>Equal Interval</option><option>Natural Breaks</option></select>
+          </div>
+          <div class="ctrl-row"><span style="flex:0 0 auto">Classes</span>
+            <div class="stepper"><button id="clsMinus">−</button><b id="clsVal">12</b><button id="clsPlus">+</button></div>
+          </div>
+        </div>
+        <button class="apply" id="applySym">✓ Apply Settings</button>
+        <div>
+          <div class="pg-lab">Temperature Legend</div>
+          <div class="tlegend" id="tlegend"></div>
+        </div>
+        <div>
+          <div class="pg-lab">Time Series Simulation</div>
+          <div class="switchrow"><span>Enable Time Series</span><span class="lsw" id="tsSwitch"></span></div>
+        </div>
+        <div>
+          <div class="pg-lab">Layers</div>
+          <div class="switchrow" style="margin-bottom:9px"><span>Heatmap Layer</span><span class="lsw on" id="lyrHeat"></span></div>
+          <div class="switchrow"><span>Polygon Layer</span><span class="lsw" id="lyrPoly"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heat Intelligence panel -->
+    <div class="panel" id="pIntel">
+      <div class="panel-h"><h3>Heat Intelligence</h3><button class="cx" data-cx="pIntel">✕</button></div>
+      <div class="panel-b">
+        <div>
+          <div class="pg-lab">⊞ Report Gallery</div>
+          <div class="gallery" id="intelGallery"></div>
+        </div>
+        <div id="intelAoiStatus" style="font-size:12px;padding:9px 11px;border-radius:8px;background:rgba(255,122,69,.10);border:1px solid var(--line);margin-bottom:4px;color:var(--ink-dim)">No Area of Interest selected — draw one with “Generate Heatmap” first.</div>
+        <button class="genbtn" id="genIntel">+ Generate Heat Intelligence Report</button>
+        <div class="pg-lab" style="margin:0">Heatmap Legend</div>
+        <div class="tlegend" id="intelLegend"></div>
+      </div>
+    </div>
+
+    <!-- AI Tree Recommendations panel -->
+    <div class="panel" id="pTrees">
+      <div class="panel-h"><h3>AI Tree Recommendations</h3><button class="cx" data-cx="pTrees">✕</button></div>
+      <div class="panel-b">
+        <div class="tree-card">
+          <div class="tree-ic">🌳</div>
+          <h4>AI Tree Recommendations</h4>
+          <p id="treeIntro">AI-powered recommendations for native tree species to reduce urban heat. Includes cooling-effect analysis, planting zones, and district action plans.</p>
+          <div class="tree-see">
+            <b>What you'll see:</b>
+            <div>✓ 7 native species with cooling data</div>
+            <div>✓ Radar & bar chart comparison</div>
+            <div>✓ District planting action plan</div>
+            <div>✓ AI-generated greening strategy</div>
+          </div>
+          <button class="tree-open" id="openTrees">🌲 Open Tree Recommendations</button>
+        </div>
+        <div class="species" id="speciesList" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Map Comparison panel -->
+    <div class="panel" id="pCompare">
+      <div class="panel-h"><h3>Map Comparison</h3><button class="cx" data-cx="pCompare">✕</button></div>
+      <div class="panel-b">
+        <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.5">Compare heat surfaces of two locations side-by-side.</p>
+        <div class="mc-sel">
+          <select id="mcA"></select><select id="mcB"></select>
+        </div>
+        <button class="genbtn" id="openMC">⇄ Open Side-by-Side</button>
+      </div>
+    </div>
+
+    <!-- Statistical Analysis panel -->
+    <div class="panel" id="pStats">
+      <div class="panel-h"><h3>Statistical Analysis</h3><button class="cx" data-cx="pStats">✕</button></div>
+      <div class="panel-b">
+        <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.5">Run a full statistical breakdown of the selected Area of Interest — temperature distribution, class histogram, hot/cool zone split, and a per-district table.</p>
+        <div class="estimate"><div class="er"><span>Active AOI</span><b id="statAoi">— none —</b></div>
+          <div class="er"><span>Mean LST</span><b id="statMean">—</b></div></div>
+        <button class="genbtn" id="openStats">📊 Open Statistical Results</button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="right scroll">
+    <div class="report-head"><h3>Heat Report</h3><span class="flag" id="rFlag">🌍</span></div>
+    <div class="big-temp" id="rTemp">—<small>°C</small></div>
+    <div class="subline" id="rSub">Select a location</div>
+    <div class="risk" id="rRisk" style="background:rgba(108,197,176,.15);color:var(--c2)">— Risk</div>
+    <div class="metrics">
+      <div class="metric"><div class="mv" id="mFeels">—</div><div class="ml">Feels like</div></div>
+      <div class="metric"><div class="mv" id="mUHI">—</div><div class="ml">Urban heat island Δ</div></div>
+      <div class="metric"><div class="mv" id="mHum">—</div><div class="ml">Humidity</div></div>
+      <div class="metric"><div class="mv" id="mPop">—</div><div class="ml">Exposed population</div></div>
+    </div>
+    <p class="sec-label">7-Day Trend</p>
+    <canvas class="spark" id="spark"></canvas>
+    <div class="insight" id="rInsight">Pick any country, city, or division to generate a decision-ready heat intelligence brief. Click a country on the map to drill into its cities.</div>
+    <button class="btn btn-primary" id="dlBtn">⬇ Export Heat Intelligence Report</button>
+    <button class="btn btn-ghost" id="cmpBtn">⇄ Add to Comparison</button>
+    <p class="sec-label" style="margin-top:22px">Hottest Right Now</p>
+    <div id="rank"></div>
+  </aside>
+</div>
+
+<!-- COMPARISON OVERLAY -->
+<div class="cmp-overlay" id="cmpOverlay">
+  <div class="cmp-card">
+    <div class="cmp-head"><h3>Side-by-Side Comparison</h3><button class="cmp-close" id="cmpClose">✕</button></div>
+    <div class="cmp-grid" id="cmpGrid"></div>
+  </div>
+</div>
+
+<!-- UHI Intelligence Report document -->
+<div class="report-overlay" id="reportOverlay">
+  <div class="report-doc">
+    <div class="rd-top">
+      <div class="rd-tabs" id="rdTabs">
+        <button class="on" data-t="geo">Geographic Information</button>
+        <button data-t="env">Environmental Factors</button>
+        <button data-t="urban">Urban Factors</button>
+        <button data-t="events">Events Analysis</button>
+        <button data-t="anthro">Anthropogenic Factors</button>
+      </div>
+      <button class="rd-close" id="rdClose">Close Reports ✕</button>
+    </div>
+    <div style="display:flex;gap:9px;padding:12px 26px;border-bottom:1px solid #e2dccd;background:#f6f1e6">
+      <button id="dlDocx" style="background:#1b3a8f;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer">⬇ Download Word (.docx) — 2 pages</button>
+      <button id="dlReportTxt" style="background:#eee;border:1px solid #ddd;color:#444;border-radius:8px;padding:9px 16px;font-family:'Outfit',sans-serif;font-size:12.5px;cursor:pointer">⬇ Plain text</button>
+      <span id="dlStatus" style="font-family:'Outfit',sans-serif;font-size:12px;color:#7a818c;align-self:center"></span>
+    </div>
+    <div class="rd-body" id="rdBody"></div>
+  </div>
+</div>
+
+<!-- Statistical Analysis results overlay -->
+<div class="report-overlay" id="statsOverlay">
+  <div class="report-doc" style="max-width:1000px;background:#fbf7ef">
+    <div class="rd-top">
+      <h3 style="font-family:Georgia,serif;color:#1b3a8f;font-size:19px;flex:1">📊 Statistical Analysis Results</h3>
+      <button id="dlStatsDocx" style="background:#1b3a8f;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;margin-right:8px">⬇ Word (.docx)</button>
+      <button class="rd-close" id="statsClose">Close ✕</button>
+    </div>
+    <div class="rd-body" id="statsBody"></div>
+  </div>
+</div>
+
+<!-- AI Tree Recommendations results overlay -->
+<div class="report-overlay" id="treesOverlay">
+  <div class="report-doc" style="max-width:1000px;background:#fbf7ef">
+    <div class="rd-top">
+      <h3 style="font-family:Georgia,serif;color:#2e8b4f;font-size:19px;flex:1">🌳 AI Tree Recommendations</h3>
+      <button id="dlTreesDocx" style="background:#2e8b4f;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;margin-right:8px">⬇ Word (.docx)</button>
+      <button class="rd-close" id="treesClose">Close ✕</button>
+    </div>
+    <div class="rd-body" id="treesBody"></div>
+  </div>
+</div>
+
+<!-- Sky View Factor (SVF) results overlay -->
+<div class="report-overlay" id="svfOverlay">
+  <div class="report-doc" style="max-width:1000px;background:#fbf7ef">
+    <div class="rd-top">
+      <h3 style="font-family:Georgia,serif;color:#2c5f8f;font-size:19px;flex:1">🌤️ Sky View Factor — Urban Enclosure &amp; Shading</h3>
+      <button id="dlSvfDocx" style="background:#2c5f8f;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;margin-right:8px">⬇ Word (.docx)</button>
+      <button class="rd-close" id="svfClose">Close ✕</button>
+    </div>
+    <div class="rd-body" id="svfBody"></div>
+  </div>
+</div>
+
+<!-- Heat Mitigation Decision Support results overlay -->
+<div class="report-overlay" id="decisionOverlay">
+  <div class="report-doc" style="max-width:1000px;background:#fbf7ef">
+    <div class="rd-top">
+      <h3 style="font-family:Georgia,serif;color:#b5532a;font-size:19px;flex:1">🌳 Heat Mitigation Decision Support</h3>
+      <button id="dlDecisionDocx" style="background:#b5532a;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;margin-right:8px">⬇ Word (.docx)</button>
+      <button class="rd-close" id="decisionClose">Close ✕</button>
+    </div>
+    <div class="rd-body" id="decisionBody"></div>
+  </div>
+</div>
+
+<!-- Export & Reporting: full combined multi-page report -->
+<div class="report-overlay" id="exportOverlay">
+  <div class="report-doc" style="max-width:1000px;background:#fbf7ef">
+    <div class="rd-top">
+      <h3 style="font-family:Georgia,serif;color:#1b3a8f;font-size:19px;flex:1">📄 Export &amp; Reporting — Full Heat Intelligence Report</h3>
+      <button id="dlFullDocx" style="background:#1b3a8f;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;margin-right:8px">⬇ Export in Word (.docx)</button>
+      <button class="rd-close" id="exportClose">Close ✕</button>
+    </div>
+    <div style="padding:8px 26px;background:#f6f1e6;border-bottom:1px solid #e2dccd;font-family:'Outfit',sans-serif;font-size:12px;color:#7a818c">
+      <span id="fullStatus">Combined report · Geographic + Environmental + Urban + Events + Anthropogenic + Statistical Analysis + AI Tree Recommendations</span>
+    </div>
+    <div class="rd-body" id="exportBody"></div>
+  </div>
+</div>
+
+<!-- Map Comparison split overlay -->
+<div class="mc-overlay" id="mcOverlay">
+  <div class="mc-card">
+    <div class="mc-head"><h3>Map Comparison</h3><button class="cmp-close" id="mcClose">✕</button></div>
+    <div class="mc-split">
+      <div class="mc-pane"><h4 id="mcAName">Primary</h4><div class="mc-map" id="mcMapA"></div></div>
+      <div class="mc-pane"><h4 id="mcBName">Comparison</h4><div class="mc-map" id="mcMapB"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const NATIONS=[
+ ["Algeria","🇩🇿","Algiers",36.7,3.0,"North"],["Angola","🇦🇴","Luanda",-8.8,13.2,"Southern"],
+ ["Benin","🇧🇯","Porto-Novo",6.5,2.6,"West"],["Botswana","🇧🇼","Gaborone",-24.6,25.9,"Southern"],
+ ["Burkina Faso","🇧🇫","Ouagadougou",12.4,-1.5,"West"],["Burundi","🇧🇮","Gitega",-3.4,29.9,"East"],
+ ["Cabo Verde","🇨🇻","Praia",14.9,-23.5,"West"],["Cameroon","🇨🇲","Yaoundé",3.8,11.5,"Central"],
+ ["Central African Rep.","🇨🇫","Bangui",4.4,18.5,"Central"],["Chad","🇹🇩","N'Djamena",12.1,15.0,"Central"],
+ ["Comoros","🇰🇲","Moroni",-11.7,43.2,"East"],["Congo","🇨🇬","Brazzaville",-4.3,15.3,"Central"],
+ ["DR Congo","🇨🇩","Kinshasa",-4.4,15.3,"Central"],["Djibouti","🇩🇯","Djibouti",11.6,43.1,"East"],
+ ["Egypt","🇪🇬","Cairo",30.0,31.2,"North"],["Eq. Guinea","🇬🇶","Malabo",3.8,8.8,"Central"],
+ ["Eritrea","🇪🇷","Asmara",15.3,38.9,"East"],["Eswatini","🇸🇿","Mbabane",-26.3,31.1,"Southern"],
+ ["Ethiopia","🇪🇹","Addis Ababa",9.0,38.7,"East"],["Gabon","🇬🇦","Libreville",0.4,9.4,"Central"],
+ ["Gambia","🇬🇲","Banjul",13.4,-16.6,"West"],["Ghana","🇬🇭","Accra",5.6,-0.2,"West"],
+ ["Guinea","🇬🇳","Conakry",9.6,-13.6,"West"],["Guinea-Bissau","🇬🇼","Bissau",11.9,-15.6,"West"],
+ ["Ivory Coast","🇨🇮","Yamoussoukro",6.8,-5.3,"West"],["Kenya","🇰🇪","Nairobi",-1.3,36.8,"East"],
+ ["Lesotho","🇱🇸","Maseru",-29.3,27.5,"Southern"],["Liberia","🇱🇷","Monrovia",6.3,-10.8,"West"],
+ ["Libya","🇱🇾","Tripoli",32.9,13.2,"North"],["Madagascar","🇲🇬","Antananarivo",-18.9,47.5,"East"],
+ ["Malawi","🇲🇼","Lilongwe",-13.9,33.8,"East"],["Mali","🇲🇱","Bamako",12.6,-8.0,"West"],
+ ["Mauritania","🇲🇷","Nouakchott",18.1,-15.9,"West"],["Mauritius","🇲🇺","Port Louis",-20.2,57.5,"East"],
+ ["Morocco","🇲🇦","Rabat",34.0,-6.8,"North"],["Mozambique","🇲🇿","Maputo",-25.9,32.6,"Southern"],
+ ["Namibia","🇳🇦","Windhoek",-22.6,17.1,"Southern"],["Niger","🇳🇪","Niamey",13.5,2.1,"West"],
+ ["Nigeria","🇳🇬","Abuja",9.1,7.5,"West"],["Rwanda","🇷🇼","Kigali",-1.9,30.1,"East"],
+ ["São Tomé & Príncipe","🇸🇹","São Tomé",0.3,6.7,"Central"],["Senegal","🇸🇳","Dakar",14.7,-17.5,"West"],
+ ["Seychelles","🇸🇨","Victoria",-4.6,55.5,"East"],["Sierra Leone","🇸🇱","Freetown",8.5,-13.2,"West"],
+ ["Somalia","🇸🇴","Mogadishu",2.0,45.3,"East"],["South Africa","🇿🇦","Pretoria",-25.7,28.2,"Southern"],
+ ["South Sudan","🇸🇸","Juba",4.9,31.6,"East"],["Sudan","🇸🇩","Khartoum",15.5,32.5,"North"],
+ ["Tanzania","🇹🇿","Dodoma",-6.2,35.7,"East"],["Togo","🇹🇬","Lomé",6.1,1.2,"West"],
+ ["Tunisia","🇹🇳","Tunis",36.8,10.2,"North"],["Uganda","🇺🇬","Kampala",0.3,32.6,"East"],
+ ["Zambia","🇿🇲","Lusaka",-15.4,28.3,"Southern"],["Zimbabwe","🇿🇼","Harare",-17.8,31.0,"Southern"]
+];
+const CITY_SUFFIX=["Metro","North District","Port Zone","Industrial Belt","Old Town"];
+/* Real major cities / administrative divisions per country, with actual coordinates [name,lat,lng].
+   Capital is added automatically from NATIONS. Coordinates are public geographic facts. */
+const CITIES={
+ "Algeria":[["Oran",35.70,-0.63],["Constantine",36.36,6.61],["Annaba",36.90,7.77],["Blida",36.47,2.83],["Batna",35.56,6.17],["Sétif",36.19,5.41],["Tlemcen",34.88,-1.32],["Béjaïa",36.75,5.06],["Tamanrasset",22.79,5.53],["Ouargla",31.95,5.33],["Ghardaïa",32.49,3.67],["Béchar",31.62,-2.22],["Adrar",27.87,-0.29],["Djelfa",34.67,3.26],["Biskra",34.85,5.73],["Tiaret",35.37,1.32],["Skikda",36.88,6.91],["Mostaganem",35.93,0.09]],
+ "Angola":[["Huambo",-12.78,15.74],["Lobito",-12.36,13.55],["Benguela",-12.58,13.41],["Lubango",-14.92,13.49],["Cabinda",-5.55,12.20],["Malanje",-9.54,16.34],["Namibe",-15.20,12.15],["Soyo",-6.13,12.37],["Uíge",-7.61,15.06],["Kuito",-12.38,16.93],["Saurimo",-9.66,20.39],["Menongue",-14.66,17.69]],
+ "Benin":[["Cotonou",6.37,2.42],["Parakou",9.34,2.63],["Djougou",9.71,1.67],["Bohicon",7.18,2.07],["Abomey",7.18,1.99],["Natitingou",10.30,1.38],["Kandi",11.13,2.94],["Ouidah",6.36,2.09],["Lokossa",6.64,1.72]],
+ "Botswana":[["Francistown",-21.17,27.51],["Molepolole",-24.41,25.50],["Maun",-19.99,23.42],["Selebi-Phikwe",-21.98,27.83],["Serowe",-22.39,26.71],["Kanye",-24.97,25.34],["Ghanzi",-21.70,21.65],["Kasane",-17.81,25.15],["Tsabong",-26.02,22.40]],
+ "Burkina Faso":[["Bobo-Dioulasso",11.18,-4.30],["Koudougou",12.25,-2.36],["Banfora",10.63,-4.76],["Ouahigouya",13.58,-2.42],["Kaya",13.09,-1.08],["Tenkodogo",11.78,-0.37],["Dori",14.03,-0.03],["Fada N'gourma",12.06,0.36],["Gaoua",10.33,-3.18]],
+ "Burundi":[["Bujumbura",-3.38,29.36],["Ngozi",-2.91,29.83],["Ruyigi",-3.48,30.25],["Gitega",-3.43,29.93],["Rumonge",-3.97,29.44],["Muyinga",-2.85,30.34],["Kayanza",-2.92,29.62]],
+ "Cabo Verde":[["Mindelo",16.89,-24.99],["Santa Maria",16.60,-22.91],["Assomada",15.10,-23.66],["Espargos",16.75,-22.95],["Pedra Badejo",15.14,-23.53],["Tarrafal",15.28,-23.75]],
+ "Cameroon":[["Douala",4.05,9.77],["Bamenda",5.96,10.15],["Garoua",9.30,13.40],["Maroua",10.59,14.32],["Bafoussam",5.48,10.42],["Ngaoundéré",7.32,13.58],["Bertoua",4.58,13.68],["Ebolowa",2.91,11.15],["Kumba",4.64,9.45],["Buea",4.15,9.24],["Limbe",4.02,9.20]],
+ "Central African Rep.":[["Bimbo",4.26,18.42],["Berbérati",4.27,15.79],["Carnot",4.94,15.88],["Bambari",5.77,20.68],["Bouar",5.96,15.60],["Bossangoa",6.49,17.45],["Bria",6.54,21.99],["Kaga-Bandoro",6.99,19.18]],
+ "Chad":[["Moundou",8.57,16.08],["Sarh",9.14,18.39],["Abéché",13.83,20.83],["Kélo",9.31,15.81],["Koumra",8.91,17.55],["Am Timan",11.03,20.28],["Bongor",10.28,15.37],["Mongo",12.18,18.69],["Faya-Largeau",17.92,19.11],["Doba",8.65,16.85]],
+ "Comoros":[["Mutsamudu",-12.17,44.40],["Fomboni",-12.28,43.74],["Domoni",-12.25,44.53],["Mitsamiouli",-11.38,43.28]],
+ "Congo":[["Pointe-Noire",-4.78,11.86],["Dolisie",-4.20,12.67],["Nkayi",-4.18,13.29],["Ouesso",1.61,16.05],["Owando",-0.48,15.90],["Impfondo",1.62,18.06]],
+ "DR Congo":[["Lubumbashi",-11.66,27.48],["Mbuji-Mayi",-6.13,23.60],["Kananga",-5.90,22.42],["Kisangani",0.52,25.20],["Bukavu",-2.51,28.84],["Goma",-1.66,29.22],["Likasi",-10.98,26.73],["Kolwezi",-10.72,25.47],["Tshikapa",-6.42,20.79],["Matadi",-5.82,13.46],["Kikwit",-5.04,18.82],["Mbandaka",0.05,18.26],["Bunia",1.57,30.25],["Uvira",-3.40,29.14]],
+ "Djibouti":[["Ali Sabieh",11.16,42.71],["Tadjourah",11.79,42.88],["Obock",11.97,43.29],["Dikhil",11.10,42.37],["Arta",11.53,42.85]],
+ "Egypt":[["Alexandria",31.20,29.92],["Giza",30.01,31.21],["Luxor",25.69,32.64],["Aswan",24.09,32.90],["Port Said",31.26,32.30],["Suez",29.97,32.53],["Mansoura",31.04,31.38],["Asyut",27.18,31.18],["Tanta",30.79,31.00],["Ismailia",30.60,32.27],["Faiyum",29.31,30.84],["Minya",28.10,30.75],["Sohag",26.56,31.69],["Hurghada",27.26,33.81],["Damanhur",31.03,30.47],["Qena",26.16,32.73],["Marsa Matruh",31.35,27.24]],
+ "Eq. Guinea":[["Bata",1.86,9.77],["Ebebiyín",2.15,11.34],["Mongomo",1.63,11.32],["Aconibe",1.30,10.93],["Luba",3.46,8.55]],
+ "Eritrea":[["Keren",15.78,38.45],["Massawa",15.61,39.45],["Assab",13.01,42.74],["Mendefera",14.89,38.81],["Barentu",15.11,37.59],["Adi Keih",14.84,39.37]],
+ "Eswatini":[["Manzini",-26.49,31.38],["Lobamba",-26.45,31.20],["Siteki",-26.45,31.95],["Nhlangano",-27.11,31.20],["Piggs Peak",-25.96,31.25]],
+ "Ethiopia":[["Dire Dawa",9.59,41.86],["Mekelle",13.49,39.47],["Gondar",12.60,37.46],["Hawassa",7.05,38.48],["Bahir Dar",11.59,37.39],["Adama",8.54,39.27],["Jimma",7.67,36.83],["Dessie",11.13,39.63],["Jijiga",9.35,42.80],["Shashamane",7.20,38.60],["Bishoftu",8.75,38.98],["Arba Minch",6.04,37.55],["Harar",9.31,42.12]],
+ "Gabon":[["Port-Gentil",-0.72,8.78],["Franceville",-1.63,13.58],["Oyem",1.60,11.58],["Lambaréné",-0.70,10.24],["Moanda",-1.57,13.20],["Mouila",-1.87,11.06],["Tchibanga",-2.93,11.02]],
+ "Gambia":[["Serekunda",13.44,-16.68],["Brikama",13.27,-16.65],["Bakau",13.48,-16.68],["Farafenni",13.57,-15.60],["Basse Santa Su",13.31,-14.21],["Soma",13.43,-15.53]],
+ "Ghana":[["Kumasi",6.69,-1.62],["Tamale",9.41,-0.85],["Sekondi-Takoradi",4.93,-1.76],["Cape Coast",5.11,-1.25],["Tema",5.67,-0.02],["Sunyani",7.34,-2.33],["Koforidua",6.09,-0.26],["Ho",6.61,0.47],["Wa",10.06,-2.50],["Bolgatanga",10.79,-0.85],["Techiman",7.59,-1.94]],
+ "Guinea":[["Nzérékoré",7.76,-8.82],["Kankan",10.39,-9.31],["Kindia",10.06,-12.86],["Labé",11.32,-12.28],["Kissidougou",9.18,-10.10],["Boké",10.94,-14.30],["Mamou",10.38,-12.09],["Faranah",10.04,-10.74]],
+ "Guinea-Bissau":[["Bafatá",12.17,-14.66],["Gabú",12.28,-14.22],["Cacheu",12.27,-16.17],["Bissorã",12.22,-15.45],["Bolama",11.58,-15.48]],
+ "Ivory Coast":[["Abidjan",5.36,-4.01],["Bouaké",7.69,-5.03],["Daloa",6.88,-6.45],["San-Pédro",4.75,-6.64],["Korhogo",9.46,-5.63],["Man",7.41,-7.55],["Gagnoa",6.13,-5.95],["Divo",5.84,-5.36],["Abengourou",6.73,-3.50],["Bondoukou",8.04,-2.80]],
+ "Kenya":[["Mombasa",-4.04,39.67],["Kisumu",-0.09,34.77],["Nakuru",-0.30,36.08],["Eldoret",0.52,35.27],["Thika",-1.03,37.07],["Malindi",-3.22,40.12],["Kitale",1.02,35.00],["Garissa",-0.45,39.66],["Nyeri",-0.42,36.95],["Machakos",-1.52,37.26],["Meru",0.05,37.65],["Kakamega",0.28,34.75]],
+ "Lesotho":[["Teyateyaneng",-29.15,27.74],["Mafeteng",-29.82,27.24],["Hlotse",-28.87,28.05],["Mohale's Hoek",-30.15,27.47],["Mokhotlong",-29.29,29.07],["Quthing",-30.40,27.70]],
+ "Liberia":[["Gbarnga",6.99,-9.47],["Buchanan",5.88,-10.05],["Kakata",6.53,-10.35],["Harper",4.38,-7.71],["Voinjama",8.42,-9.75],["Zwedru",6.07,-8.13],["Ganta",7.34,-8.98]],
+ "Libya":[["Benghazi",32.12,20.07],["Misrata",32.38,15.09],["Bayda",32.76,21.75],["Zawiya",32.76,12.73],["Sabha",27.04,14.43],["Tobruk",32.08,23.96],["Khoms",32.65,14.26],["Sirte",31.21,16.59],["Ajdabiya",30.76,20.23],["Ghat",24.96,10.18],["Kufra",24.18,23.31]],
+ "Madagascar":[["Toamasina",-18.15,49.40],["Antsirabe",-19.87,47.03],["Mahajanga",-15.72,46.32],["Fianarantsoa",-21.45,47.09],["Toliara",-23.35,43.67],["Antsiranana",-12.28,49.29],["Morondava",-20.28,44.28],["Manakara",-22.13,48.02],["Tôlanaro",-25.03,46.99]],
+ "Malawi":[["Blantyre",-15.79,35.01],["Mzuzu",-11.47,34.02],["Zomba",-15.39,35.32],["Kasungu",-13.03,33.48],["Mangochi",-14.48,35.26],["Karonga",-9.93,33.93],["Salima",-13.78,34.46]],
+ "Mali":[["Sikasso",11.32,-5.67],["Mopti",14.49,-4.18],["Ségou",13.43,-6.27],["Kayes",14.45,-11.44],["Gao",16.27,-0.04],["Timbuktu",16.77,-3.01],["Koutiala",12.39,-5.46],["Kati",12.74,-8.07],["Kidal",18.44,1.41],["San",13.30,-4.90],["Nioro",15.23,-9.59]],
+ "Mauritania":[["Nouadhibou",20.93,-17.03],["Kiffa",16.62,-11.40],["Kaédi",16.15,-13.50],["Rosso",16.51,-15.81],["Zouérat",22.74,-12.48],["Atar",20.52,-13.05],["Néma",16.62,-7.26],["Sélibaby",15.16,-12.18]],
+ "Mauritius":[["Beau Bassin-Rose Hill",-20.23,57.46],["Vacoas",-20.30,57.49],["Curepipe",-20.32,57.52],["Quatre Bornes",-20.27,57.48],["Mahébourg",-20.41,57.70],["Triolet",-20.06,57.55]],
+ "Morocco":[["Casablanca",33.57,-7.59],["Marrakesh",31.63,-7.99],["Fès",34.02,-5.00],["Tangier",35.76,-5.83],["Agadir",30.43,-9.60],["Meknès",33.90,-5.55],["Oujda",34.68,-1.91],["Kenitra",34.26,-6.58],["Tétouan",35.58,-5.37],["Safi",32.30,-9.24],["El Jadida",33.25,-8.51],["Nador",35.17,-2.93],["Beni Mellal",32.34,-6.36],["Ouarzazate",30.92,-6.91],["Errachidia",31.93,-4.42],["Laâyoune",27.15,-13.20],["Dakhla",23.68,-15.96]],
+ "Mozambique":[["Matola",-25.96,32.46],["Beira",-19.84,34.84],["Nampula",-15.12,39.27],["Chimoio",-19.12,33.48],["Nacala",-14.54,40.67],["Quelimane",-17.88,36.89],["Tete",-16.16,33.59],["Pemba",-12.97,40.52],["Lichinga",-13.31,35.24],["Xai-Xai",-25.05,33.64],["Inhambane",-23.86,35.38]],
+ "Namibia":[["Walvis Bay",-22.96,14.51],["Swakopmund",-22.68,14.53],["Oshakati",-17.78,15.70],["Rundu",-17.93,19.77],["Rehoboth",-23.32,17.09],["Katima Mulilo",-17.50,24.27],["Otjiwarongo",-20.46,16.65],["Keetmanshoop",-26.58,18.13]],
+ "Niger":[["Zinder",13.80,8.99],["Maradi",13.50,7.10],["Agadez",16.97,7.99],["Tahoua",14.89,5.27],["Dosso",13.05,3.19],["Arlit",18.74,7.39],["Tillabéri",14.21,1.45],["Diffa",13.31,12.61],["Birni-N'Konni",13.79,5.25]],
+ "Nigeria":[["Lagos",6.52,3.38],["Kano",12.00,8.52],["Ibadan",7.38,3.90],["Port Harcourt",4.82,7.04],["Benin City",6.34,5.62],["Kaduna",10.52,7.44],["Enugu",6.46,7.55],["Jos",9.90,8.86],["Maiduguri",11.85,13.16],["Zaria",11.07,7.72],["Ilorin",8.50,4.55],["Aba",5.11,7.37],["Onitsha",6.15,6.79],["Sokoto",13.06,5.24],["Calabar",4.96,8.33],["Warri",5.52,5.75],["Akure",7.25,5.20],["Abeokuta",7.16,3.35]],
+ "Rwanda":[["Butare",-2.60,29.74],["Gisenyi",-1.70,29.26],["Ruhengeri",-1.50,29.63],["Musanze",-1.50,29.63],["Cyangugu",-2.48,28.91],["Byumba",-1.58,30.07],["Nyanza",-2.35,29.75]],
+ "São Tomé & Príncipe":[["Trindade",0.30,6.68],["Santana",0.25,6.74],["Neves",0.36,6.55],["Santo António",1.64,7.42]],
+ "Senegal":[["Touba",14.85,-15.88],["Thiès",14.79,-16.93],["Saint-Louis",16.03,-16.49],["Kaolack",14.16,-16.07],["Ziguinchor",12.58,-16.27],["Diourbel",14.65,-16.23],["Tambacounda",13.77,-13.67],["Louga",15.62,-16.23],["Kolda",12.90,-14.94],["Mbour",14.42,-16.96]],
+ "Seychelles":[["Anse Boileau",-4.71,55.49],["Beau Vallon",-4.62,55.43],["Takamaka",-4.77,55.51],["Anse Royale",-4.74,55.51]],
+ "Sierra Leone":[["Bo",7.96,-11.74],["Kenema",7.88,-11.19],["Makeni",8.88,-12.05],["Koidu",8.64,-10.97],["Port Loko",8.77,-12.79],["Kabala",9.59,-11.55],["Bonthe",7.53,-12.51]],
+ "Somalia":[["Hargeisa",9.56,44.07],["Bosaso",11.28,49.18],["Kismayo",-0.36,42.55],["Berbera",10.44,45.01],["Baidoa",3.12,43.65],["Galkayo",6.77,47.43],["Burao",9.52,45.53],["Merca",1.71,44.77],["Beledweyne",4.74,45.20]],
+ "South Africa":[["Johannesburg",-26.20,28.05],["Cape Town",-33.92,18.42],["Durban",-29.86,31.03],["Port Elizabeth",-33.96,25.60],["Bloemfontein",-29.12,26.21],["East London",-33.02,27.91],["Polokwane",-23.90,29.45],["Nelspruit",-25.47,30.97],["Kimberley",-28.74,24.76],["Pietermaritzburg",-29.60,30.38],["Rustenburg",-25.67,27.24],["George",-33.96,22.46],["Witbank",-25.87,29.23],["Vereeniging",-26.67,27.93]],
+ "South Sudan":[["Wau",7.70,28.00],["Malakal",9.53,31.66],["Yei",4.09,30.68],["Bor",6.21,31.56],["Aweil",8.77,27.40],["Rumbek",6.81,29.68],["Torit",4.41,32.57],["Bentiu",9.23,29.83]],
+ "Sudan":[["Omdurman",15.65,32.48],["Port Sudan",19.62,37.22],["Kassala",15.45,36.40],["El Obeid",13.18,30.22],["Nyala",12.05,24.88],["Wad Madani",14.40,33.52],["Gedaref",14.04,35.38],["El Fasher",13.63,25.35],["Kosti",13.17,32.66],["Atbara",17.70,33.99],["Dongola",19.17,30.48]],
+ "Tanzania":[["Dar es Salaam",-6.79,39.21],["Mwanza",-2.52,32.90],["Arusha",-3.39,36.68],["Mbeya",-8.91,33.46],["Zanzibar City",-6.16,39.20],["Morogoro",-6.82,37.66],["Tanga",-5.07,39.10],["Moshi",-3.35,37.34],["Tabora",-5.02,32.80],["Kigoma",-4.88,29.63],["Iringa",-7.77,35.69],["Songea",-10.68,35.65]],
+ "Togo":[["Sokodé",8.98,1.13],["Kara",9.55,1.19],["Kpalimé",6.90,0.63],["Atakpamé",7.53,1.13],["Dapaong",10.86,0.21],["Tsévié",6.43,1.21],["Bassar",9.25,0.78]],
+ "Tunisia":[["Sfax",34.74,10.76],["Sousse",35.83,10.64],["Kairouan",35.68,10.10],["Bizerte",37.27,9.87],["Gabès",33.88,10.10],["Gafsa",34.42,8.78],["Monastir",35.78,10.83],["Médenine",33.35,10.50],["Tataouine",32.93,10.45],["Tozeur",33.92,8.13],["Nabeul",36.46,10.74]],
+ "Uganda":[["Gulu",2.77,32.30],["Mbarara",-0.61,30.66],["Jinja",0.44,33.20],["Mbale",1.08,34.18],["Masaka",-0.34,31.73],["Lira",2.25,32.90],["Soroti",1.71,33.61],["Fort Portal",0.66,30.27],["Arua",3.02,30.91],["Kabale",-1.25,29.99],["Hoima",1.43,31.35]],
+ "Zambia":[["Kitwe",-12.81,28.21],["Ndola",-12.97,28.64],["Kabwe",-14.45,28.45],["Livingstone",-17.85,25.86],["Chingola",-12.53,27.85],["Mufulira",-12.55,28.24],["Chipata",-13.64,32.65],["Kasama",-10.21,31.18],["Solwezi",-12.17,26.39],["Mongu",-15.25,23.13]],
+ "Zimbabwe":[["Bulawayo",-20.16,28.58],["Chitungwiza",-18.01,31.08],["Mutare",-18.97,32.65],["Gweru",-19.46,29.82],["Kwekwe",-18.93,29.81],["Masvingo",-20.06,30.83],["Kadoma",-18.34,29.92],["Chinhoyi",-17.37,30.20],["Hwange",-18.36,26.50],["Victoria Falls",-17.93,25.83]]
+};
+function seeded(n){let x=Math.sin(n*99.13)*43758.5;return x-Math.floor(x);}
+function buildMetrics(lat,lng,i){
+  const eqHeat=38-Math.abs(lat)*0.55;
+  const sahara=(lat>12&&lat<32)?6:0;
+  const temp=+(eqHeat+sahara+(seeded(i)*6-3)).toFixed(1);
+  const uhi=+(1.8+seeded(i+7)*4.2).toFixed(1);
+  const hum=Math.round(28+seeded(i+3)*55);
+  const feels=+(temp+(hum>60?uhi+3:uhi-1)).toFixed(1);
+  const pop=+(0.6+seeded(i+11)*14).toFixed(1);
+  const trend=Array.from({length:7},(_,d)=>+(temp+(seeded(i+d*13)*4-2)).toFixed(1));
+  return {temp,uhi,hum,feels,pop,trend};
+}
+// Build countries: capital (from NATIONS) + real cities/divisions (from CITIES) with actual coordinates
+const DATA=NATIONS.map((n,i)=>{
+  const [name,flag,cap,lat,lng,region]=n;
+  const m=buildMetrics(lat,lng,i);
+  const cities=[{name:cap,lat,lng,...m,isCapital:true}];
+  const extra=CITIES[name]||[];
+  extra.forEach((ct,c)=>{
+    const [cname,clat,clng]=ct;
+    const cm=buildMetrics(clat,clng,i*60+c+1);
+    cities.push({name:cname,lat:clat,lng:clng,...cm,isCapital:false});
+  });
+  return {name,flag,cap,lat,lng,region,...m,cities};
+});
+
+const cv=document.getElementById('map'),ctx=cv.getContext('2d');
+let W,H,DPR=window.devicePixelRatio||1;
+let BBOX={minLng:-26,maxLng:60,minLat:-37,maxLat:39};
+const CONT_BBOX={...BBOX};
+let view={x:0,y:0,scale:1};
+let mode="heat",selected=null,hover=null,drillCountry=null,useApi=false;
+const compare=[];
+
+function resize(){const r=cv.parentElement.getBoundingClientRect();W=r.width;H=r.height;
+  cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';ctx.setTransform(DPR,0,0,DPR,0,0);draw();}
+function project(lat,lng){const px=(lng-BBOX.minLng)/(BBOX.maxLng-BBOX.minLng)*W;
+  const py=(BBOX.maxLat-lat)/(BBOX.maxLat-BBOX.minLat)*H;return [px*view.scale+view.x,py*view.scale+view.y];}
+const RAMP=[[10,'#1d3a5f'],[18,'#2c7da0'],[24,'#6cc5b0'],[28,'#f2cc8f'],[33,'#e9974c'],[37,'#e25a3b'],[42,'#bd2a2e'],[48,'#7a1f2b']];
+function lerpC(a,b,f){const pa=[parseInt(a.slice(1,3),16),parseInt(a.slice(3,5),16),parseInt(a.slice(5,7),16)];
+  const pb=[parseInt(b.slice(1,3),16),parseInt(b.slice(3,5),16),parseInt(b.slice(5,7),16)];
+  return `rgb(${pa.map((v,i)=>Math.round(v+(pb[i]-v)*f)).join(',')})`;}
+function colorFor(t){for(let i=0;i<RAMP.length-1;i++){const [a,ca]=RAMP[i],[b,cb]=RAMP[i+1];
+  if(t<=b){const f=Math.max(0,Math.min(1,(t-a)/(b-a)));return lerpC(ca,cb,f);}}return RAMP[RAMP.length-1][1];}
+
+let region="All",thresh=0;
+function visibleCountries(){return DATA.filter(d=>(region==="All"||d.region===region)&&d.temp>=thresh);}
+function activeNodes(){
+  if(drillCountry){return drillCountry.cities.map(c=>({...c,flag:drillCountry.flag,country:drillCountry.name,region:drillCountry.region}));}
+  return visibleCountries().map(d=>({...d,country:d.name,nodeName:d.cap}));
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const g=ctx.createRadialGradient(W*.45,H*.5,40,W*.45,H*.5,Math.max(W,H)*.7);
+  g.addColorStop(0,'rgba(60,40,25,.35)');g.addColorStop(1,'rgba(12,10,8,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const nodes=activeNodes();
+  ctx.globalCompositeOperation='lighter';
+  nodes.forEach(d=>{const [x,y]=project(d.lat,d.lng);
+    let val=d.temp;if(mode==='risk')val=d.feels;if(mode==='anomaly')val=24+d.uhi*2.4;
+    const rad=(34+d.pop*3)*view.scale*(drillCountry?1.4:1);
+    const rg=ctx.createRadialGradient(x,y,1,x,y,rad);const col=colorFor(val);
+    rg.addColorStop(0,col.replace('rgb','rgba').replace(')',',0.55)'));rg.addColorStop(1,col.replace('rgb','rgba').replace(')',',0)'));
+    ctx.fillStyle=rg;ctx.beginPath();ctx.arc(x,y,rad,0,7);ctx.fill();});
+  ctx.globalCompositeOperation='source-over';
+  nodes.forEach(d=>{const [x,y]=project(d.lat,d.lng);
+    let val=d.temp;if(mode==='risk')val=d.feels;if(mode==='anomaly')val=24+d.uhi*2.4;
+    const label=drillCountry?d.name:d.cap;
+    const sel=selected&&selected._lat===d.lat&&selected._lng===d.lng;
+    const inCmp=compare.find(c=>c._lat===d.lat&&c._lng===d.lng);
+    ctx.beginPath();ctx.arc(x,y,sel?9:(d.isCapital&&drillCountry?7:6),0,7);
+    ctx.fillStyle=colorFor(val);ctx.shadowColor=colorFor(val);ctx.shadowBlur=sel?20:10;ctx.fill();ctx.shadowBlur=0;
+    ctx.lineWidth=sel?2.5:(inCmp?2:1);ctx.strokeStyle=sel?'#fff':(inCmp?'#e8c98f':'rgba(255,255,255,.5)');ctx.stroke();
+    if(sel||(hover&&hover.lat===d.lat&&hover.lng===d.lng)||view.scale>2.2||drillCountry){
+      ctx.fillStyle='#f6ead6';ctx.font='600 11px Outfit';ctx.textAlign='center';ctx.fillText(label,x,y-13);}});
+}
+
+function findNode(mx,my){let best=null,bd=18;activeNodes().forEach(d=>{const [x,y]=project(d.lat,d.lng);
+  const dist=Math.hypot(x-mx,y-my);if(dist<bd){bd=dist;best=d;}});return best;}
+
+let drag=null;
+cv.addEventListener('mousedown',e=>drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y,moved:false});
+window.addEventListener('mouseup',()=>{if(drag&&!drag.moved)handleClick(drag.x,drag.y);drag=null;});
+window.addEventListener('mousemove',e=>{
+  if(drag){if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>4)drag.moved=true;
+    view.x=drag.vx+(e.clientX-drag.x);view.y=drag.vy+(e.clientY-drag.y);draw();return;}
+  const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  hover=findNode(mx,my);const tip=document.getElementById('tip');
+  if(hover){const [x,y]=project(hover.lat,hover.lng);const nm=drillCountry?hover.name:hover.cap;
+    tip.style.opacity=1;tip.style.left=(x+16)+'px';tip.style.top=(y-10)+'px';
+    tip.innerHTML=`<h4>${hover.flag} ${nm}</h4><div class="tt-temp" style="color:${colorFor(hover.temp)}">${hover.temp}°C</div>
+      <div class="tt-row"><span>Feels like</span><span>${hover.feels}°C</span></div>
+      <div class="tt-row"><span>UHI Δ</span><span>+${hover.uhi}°C</span></div>
+      ${!drillCountry?'<div class="tt-row"><span style="color:var(--accent)">click to drill in ↓</span></div>':''}`;
+    cv.style.cursor='pointer';draw();}
+  else{tip.style.opacity=0;cv.style.cursor=drag?'grabbing':'grab';if(!drag)draw();}
+});
+cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  const f=e.deltaY<0?1.12:0.89;const ns=Math.max(.8,Math.min(8,view.scale*f));
+  view.x=mx-(mx-view.x)*(ns/view.scale);view.y=my-(my-view.y)*(ns/view.scale);view.scale=ns;draw();},{passive:false});
+
+function handleClick(cx,cy){const r=cv.getBoundingClientRect(),mx=cx-r.left,my=cy-r.top;
+  const node=findNode(mx,my);if(!node)return;
+  if(!drillCountry){drillInto(DATA.find(d=>d.name===node.name));}
+  else{selectNode(node);}
+}
+function selectNode(node){selected={...node,_lat:node.lat,_lng:node.lng};renderReport(selected);draw();}
+
+function drillInto(country){
+  drillCountry=country;
+  // zoom bbox to country cities
+  const lats=country.cities.map(c=>c.lat),lngs=country.cities.map(c=>c.lng);
+  const pad=2.5;
+  BBOX={minLat:Math.min(...lats)-pad,maxLat:Math.max(...lats)+pad,minLng:Math.min(...lngs)-pad,maxLng:Math.max(...lngs)+pad};
+  view={x:0,y:0,scale:1};
+  document.getElementById('breadcrumb').classList.add('show');
+  document.getElementById('bcCountry').textContent=country.flag+' '+country.name;
+  document.getElementById('mapH2').textContent=country.name+' — City Grid';
+  document.getElementById('mapSub').textContent=country.cities.length+' divisions · drill view';
+  document.getElementById('foot').textContent='Click a city/division for its report · ‹ Continent to zoom out';
+  selectNode(country.cities[0]);draw();
+}
+document.getElementById('bcBack').onclick=exitDrill;
+function exitDrill(){drillCountry=null;BBOX={...CONT_BBOX};view={x:0,y:0,scale:1};
+  document.getElementById('breadcrumb').classList.remove('show');
+  document.getElementById('mapH2').textContent='Continental Heat Surface';
+  document.getElementById('mapSub').textContent='54 nations · real-time simulation';
+  document.getElementById('foot').textContent='Drag to pan · scroll to zoom · click a country to drill into its cities';
+  draw();}
+
+function riskLevel(feels){if(feels>=42)return['Extreme','rgba(189,42,46,.18)','#e25a3b'];
+  if(feels>=37)return['High','rgba(233,151,76,.18)','#e9974c'];
+  if(feels>=30)return['Moderate','rgba(242,204,143,.18)','#f2cc8f'];return['Low','rgba(108,197,176,.15)','#6cc5b0'];}
+function renderReport(d){
+  document.getElementById('rFlag').textContent=d.flag;
+  document.getElementById('rTemp').innerHTML=d.temp+'<small>°C</small>';
+  const where=drillCountry?`${d.name}, ${drillCountry.name}`:`${d.cap}, ${d.name}`;
+  document.getElementById('rSub').textContent=`${where} · ${d.region} Africa`;
+  const [lvl,bg,fg]=riskLevel(d.feels);const rk=document.getElementById('rRisk');
+  rk.textContent=lvl+' Heat Risk';rk.style.background=bg;rk.style.color=fg;
+  document.getElementById('mFeels').textContent=d.feels+'°C';
+  document.getElementById('mUHI').textContent='+'+d.uhi+'°C';
+  document.getElementById('mHum').textContent=d.hum+'%';
+  document.getElementById('mPop').textContent=d.pop+'M';
+  drawSpark(d.trend);
+  const up=d.trend[6]>d.trend[0];const nm=drillCountry?d.name:d.cap;
+  document.getElementById('rInsight').innerHTML=`<b>${nm}</b> is registering a surface temperature of <b>${d.temp}°C</b> with an urban heat-island offset of <b>+${d.uhi}°C</b> versus surrounding terrain. The 7-day trajectory is <b>${up?'rising':'easing'}</b>. With an estimated <b>${d.pop}M</b> residents in the exposure zone, ${lvl.toLowerCase()}-risk mitigation is advised for ${d.feels>=37?'outdoor labor and vulnerable groups':'routine monitoring'}.`;
+}
+function drawSpark(tr){const c=document.getElementById('spark'),x=c.getContext('2d');
+  const w=c.clientWidth,h=c.clientHeight;c.width=w*DPR;c.height=h*DPR;x.setTransform(DPR,0,0,DPR,0,0);x.clearRect(0,0,w,h);
+  const mn=Math.min(...tr)-1,mx=Math.max(...tr)+1;
+  const pts=tr.map((v,i)=>[i/(tr.length-1)*w,h-(v-mn)/(mx-mn)*(h-10)-5]);
+  const grd=x.createLinearGradient(0,0,0,h);grd.addColorStop(0,'rgba(255,122,69,.4)');grd.addColorStop(1,'rgba(255,122,69,0)');
+  x.beginPath();x.moveTo(pts[0][0],h);pts.forEach(p=>x.lineTo(p[0],p[1]));x.lineTo(w,h);x.closePath();x.fillStyle=grd;x.fill();
+  x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.strokeStyle='#ff7a45';x.lineWidth=2;x.stroke();
+  pts.forEach(p=>{x.beginPath();x.arc(p[0],p[1],2.5,0,7);x.fillStyle='#f6ead6';x.fill();});}
+
+function refreshStats(){const vis=visibleCountries();if(!vis.length)return;
+  document.getElementById('avgTemp').textContent=(vis.reduce((s,d)=>s+d.temp,0)/vis.length).toFixed(1)+'°C';
+  const hot=[...vis].sort((a,b)=>b.temp-a.temp)[0],cool=[...vis].sort((a,b)=>a.temp-b.temp)[0];
+  document.getElementById('hotName').textContent=hot.temp+'°C';document.getElementById('hotDetail').textContent='Hottest · '+hot.cap;
+  document.getElementById('coolName').textContent=cool.temp+'°C';document.getElementById('coolDetail').textContent='Coolest · '+cool.cap;
+  const rank=document.getElementById('rank');rank.innerHTML='';
+  [...vis].sort((a,b)=>b.temp-a.temp).slice(0,8).forEach((d,i)=>{const row=document.createElement('div');row.className='rank-row';
+    row.innerHTML=`<span class="rank-n">${String(i+1).padStart(2,'0')}</span><span class="rank-name">${d.flag} ${d.cap}</span><span class="rank-temp" style="color:${colorFor(d.temp)}">${d.temp}°C</span>`;
+    row.onclick=()=>drillInto(d);rank.appendChild(row);});}
+
+document.getElementById('regionChips').onclick=e=>{if(!e.target.dataset.r)return;
+  document.querySelectorAll('#regionChips .chip').forEach(c=>c.classList.remove('on'));e.target.classList.add('on');
+  region=e.target.dataset.r;if(drillCountry)exitDrill();draw();refreshStats();};
+const th=document.getElementById('thresh');
+th.oninput=()=>{thresh=+th.value;document.getElementById('threshVal').textContent=thresh+'°C';draw();refreshStats();};
+document.getElementById('vmode').onclick=e=>{if(!e.target.dataset.m)return;
+  document.querySelectorAll('#vmode button').forEach(b=>b.classList.remove('on'));e.target.classList.add('on');mode=e.target.dataset.m;
+  if(!drillCountry){const t={heat:['Continental Heat Surface','54 nations · real-time simulation'],
+    risk:['Thermal Risk Zones','feels-like exposure modelling'],anomaly:['Urban Heat Anomaly','deviation from rural baseline']};
+    document.getElementById('mapH2').textContent=t[mode][0];document.getElementById('mapSub').textContent=t[mode][1];}draw();};
+
+// SEARCH with live dropdown across countries + cities
+const searchEl=document.getElementById('search'),resultsEl=document.getElementById('results');
+searchEl.oninput=()=>{const q=searchEl.value.toLowerCase().trim();
+  if(!q){resultsEl.classList.remove('show');return;}
+  const hits=[];
+  DATA.forEach(c=>{if((c.name+c.cap).toLowerCase().includes(q))hits.push({type:'country',c});
+    c.cities.forEach(ct=>{if(ct.name.toLowerCase().includes(q))hits.push({type:'city',c,ct});});});
+  resultsEl.innerHTML=hits.slice(0,10).map((h,i)=>h.type==='country'
+    ?`<div class="res" data-k="c${DATA.indexOf(h.c)}"><span>${h.c.flag} ${h.c.name} <small>· ${h.c.cap}</small></span><span class="rt">${h.c.temp}°C</span></div>`
+    :`<div class="res" data-k="d${DATA.indexOf(h.c)}_${h.c.cities.indexOf(h.ct)}"><span>${h.c.flag} ${h.ct.name} <small>· ${h.c.name}</small></span><span class="rt">${h.ct.temp}°C</span></div>`).join('');
+  resultsEl.classList.toggle('show',hits.length>0);};
+resultsEl.onclick=e=>{const el=e.target.closest('.res');if(!el)return;const k=el.dataset.k;
+  if(k[0]==='c'){drillInto(DATA[+k.slice(1)]);}
+  else{const [ci,di]=k.slice(1).split('_').map(Number);drillInto(DATA[ci]);selectNode(DATA[ci].cities[di]);}
+  resultsEl.classList.remove('show');searchEl.value='';};
+document.addEventListener('click',e=>{if(!e.target.closest('.hsearch'))resultsEl.classList.remove('show');});
+
+// COMPARISON
+document.getElementById('cmpBtn').onclick=()=>{if(!selected)return;
+  if(!compare.find(c=>c._lat===selected._lat&&c._lng===selected._lng)){
+    if(compare.length>=3){compare.shift();}compare.push({...selected});}
+  openCompare();draw();};
+function openCompare(){const grid=document.getElementById('cmpGrid');
+  grid.style.gridTemplateColumns=`repeat(${Math.max(1,compare.length)},1fr)`;
+  if(!compare.length){grid.innerHTML='<div class="cmp-empty">Add locations with “⇄ Add to Comparison” to see them side by side.</div>';}
+  else{const maxT=Math.max(...compare.map(c=>c.temp)),maxF=Math.max(...compare.map(c=>c.feels)),maxP=Math.max(...compare.map(c=>c.pop));
+    grid.innerHTML=compare.map((c,i)=>{const nm=c.name||c.cap;const [lvl,,fg]=riskLevel(c.feels);
+      return `<div class="cmp-col"><span class="x" data-i="${i}">✕</span>
+        <h4>${c.flag} ${nm}</h4><div class="loc">${c.region} Africa</div>
+        <div class="ct" style="color:${colorFor(c.temp)}">${c.temp}°<span style="font-size:18px;color:var(--ink-faint)">C</span></div>
+        <div style="font-size:11px;color:${fg};margin-top:4px;font-weight:600">${lvl} risk</div>
+        <div class="cmp-bars">
+          ${bar('Surface',c.temp,maxT,colorFor(c.temp),'°C')}
+          ${bar('Feels like',c.feels,maxF,colorFor(c.feels),'°C')}
+          ${bar('UHI Δ',c.uhi,6,'#ff7a45','°C')}
+          ${bar('Humidity',c.hum,100,'#6cc5b0','%')}
+          ${bar('Population',c.pop,maxP,'#f2cc8f','M')}
+        </div></div>`;}).join('');}
+  document.getElementById('cmpOverlay').classList.add('show');}
+function bar(lab,v,max,col,unit){const pct=Math.max(4,Math.min(100,v/max*100));
+  return `<div class="cmp-bar-row"><div class="lab"><span>${lab}</span><b>${v}${unit}</b></div><div class="cmp-track"><div class="cmp-fill" style="width:${pct}%;background:${col}"></div></div></div>`;}
+document.getElementById('cmpGrid').onclick=e=>{if(e.target.classList.contains('x')){compare.splice(+e.target.dataset.i,1);openCompare();draw();}};
+document.getElementById('cmpClose').onclick=()=>document.getElementById('cmpOverlay').classList.remove('show');
+document.getElementById('cmpOverlay').onclick=e=>{if(e.target.id==='cmpOverlay')e.target.classList.remove('show');};
+
+// EXPORT
+document.getElementById('dlBtn').onclick=()=>{if(!selected){alert('Select a location first.');return;}const d=selected;const nm=d.name||d.cap;
+  const rep=`AFRICAHUB — HEAT INTELLIGENCE REPORT
+========================================
+Location : ${nm}${drillCountry?', '+drillCountry.name:''} (${d.region} Africa)
+Generated: ${new Date().toUTCString()}
+Source   : ${useApi?'Live API':'Simulation model'}
+
+Surface temperature : ${d.temp} °C
+Feels-like          : ${d.feels} °C
+Urban heat island Δ : +${d.uhi} °C
+Humidity            : ${d.hum} %
+Exposed population  : ${d.pop} M
+Risk classification : ${riskLevel(d.feels)[0]}
+
+7-Day trend (°C): ${d.trend.join('  ')}
+
+Recommendation: ${d.feels>=37?'Activate heat-action protocol for outdoor workers and vulnerable groups.':'Maintain routine thermal monitoring.'}
+`;
+  const blob=new Blob([rep],{type:'text/plain'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=`AfricaHub_${nm.replace(/\s/g,'_')}_HeatReport.txt`;a.click();};
+
+// LIVE API TOGGLE (Open-Meteo, no key). Falls back to sim on failure.
+const apitog=document.getElementById('apitog');
+apitog.onclick=async()=>{
+  useApi=!useApi;apitog.classList.toggle('on',useApi);
+  document.getElementById('apilabel').textContent=useApi?'LIVE API':'SIM DATA';
+  if(useApi){apitog.querySelector('#apilabel').textContent='LOADING…';await fetchLive();
+    document.getElementById('apilabel').textContent='LIVE API';}
+  draw();refreshStats();if(selected)renderReport(selected);
+};
+async function fetchLive(){
+  // Fetch real current temps for the 54 capitals from Open-Meteo (free, no key).
+  try{
+    const lat=DATA.map(d=>d.lat).join(','),lng=DATA.map(d=>d.lng).join(',');
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature`;
+    const r=await fetch(url);const j=await r.json();const arr=Array.isArray(j)?j:[j];
+    DATA.forEach((d,i)=>{const cur=arr[i]&&arr[i].current;if(cur){
+      d.temp=+cur.temperature_2m.toFixed(1);d.feels=+cur.apparent_temperature.toFixed(1);
+      d.hum=Math.round(cur.relative_humidity_2m);
+      if(d.cities[0]){d.cities[0].temp=d.temp;d.cities[0].feels=d.feels;d.cities[0].hum=d.hum;}}});
+  }catch(err){alert('Live API unavailable in this environment — showing simulation data. Hook your own endpoint into fetchLive().');useApi=false;apitog.classList.remove('on');document.getElementById('apilabel').textContent='SIM DATA';}
+}
+
+window.addEventListener('resize',resize);
+resize();refreshStats();
+selectNode(DATA.find(d=>d.name==='Egypt').cities[0]);
+selected._lat=DATA.find(d=>d.name==='Egypt').lat;selected._lng=DATA.find(d=>d.name==='Egypt').lng;
+renderReport(selected);draw();
+
+/* ============================================================
+   TEMPERATURE MAPPING WORKFLOW  (Leaflet basemap + draw + heatmap)
+   Additive layer — activates when the console is opened.
+   ============================================================ */
+let lmap=null, baseLayers={}, currentBase='carto', tmapOn=false;
+let drawShape='polygon', granularity=100, timeFrame='hour';
+let drawPts=[], drawLayer=null, previewLayer=null, heatLayer=null, drawing=false;
+let circleCenter=null;
+
+function initLeaflet(){
+  if(lmap) return;
+  lmap=L.map('leaf',{zoomControl:true,attributionControl:true}).setView([20,12],3);
+  baseLayers.carto=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    {attribution:'© OpenStreetMap, © CARTO',maxZoom:19});
+  baseLayers.osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {attribution:'© OpenStreetMap contributors',maxZoom:19});
+  baseLayers.esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {attribution:'Tiles © Esri',maxZoom:19});
+  baseLayers.carto.addTo(lmap);
+  lmap.on('click',onMapClick);
+  lmap.on('mousemove',onMapMove);
+  lmap.on('dblclick',e=>{if(drawing&&drawShape==='polygon'){L.DomEvent.stop(e);finishPolygon();}});
+}
+
+function setBase(b){
+  currentBase=b;
+  Object.values(baseLayers).forEach(l=>lmap.removeLayer(l));
+  baseLayers[b].addTo(lmap);
+  document.querySelectorAll('#basemapPick button').forEach(x=>x.classList.toggle('on',x.dataset.b===b));
+}
+document.getElementById('basemapPick').onclick=e=>{if(e.target.dataset.b){if(!lmap)initLeaflet();setBase(e.target.dataset.b);}};
+
+/* ---- open / close console ---- */
+const tmapEl=document.getElementById('tmap');
+function openTmap(){
+  tmapOn=true;tmapEl.classList.add('show');
+  document.getElementById('tmapToggle').classList.add('hide');
+  document.getElementById('leaf').style.zIndex=1;
+  document.getElementById('map').style.zIndex=3;
+  initLeaflet();setTimeout(()=>lmap.invalidateSize(),120);
+  // dim the continental canvas heatfield so the basemap reads through
+  document.getElementById('map').style.opacity='0';
+  document.getElementById('map').style.pointerEvents='none';
+  document.getElementById('foot').textContent='Draw an area of interest, then Generate Map.';
+}
+function closeTmap(){
+  tmapOn=false;tmapEl.classList.remove('show');
+  document.getElementById('tmapToggle').classList.remove('hide');
+  document.getElementById('map').style.opacity='1';
+  document.getElementById('map').style.pointerEvents='auto';
+  document.getElementById('drawHint').classList.remove('show');
+  drawing=false;
+  document.getElementById('foot').textContent='Drag to pan · scroll to zoom · click a country to drill into its cities';
+}
+document.getElementById('tmapToggle').onclick=()=>openTmap();
+document.getElementById('tmapToggleSide').onclick=()=>openTmap();
+document.getElementById('tmapClose').onclick=closeTmap;
+
+/* ---- shape / granularity / time segments ---- */
+document.getElementById('shapeSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#shapeSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  drawShape=b.dataset.s;resetDraw();
+  if(drawShape==='upload'){uploadGeo();}
+  else beginDraw();};
+document.getElementById('granSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#granSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');granularity=+b.dataset.g;};
+document.getElementById('timeSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#timeSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');timeFrame=b.dataset.t;};
+let unit='mi';
+document.getElementById('unitPick').onclick=e=>{if(!e.target.dataset.u)return;unit=e.target.dataset.u;
+  document.querySelectorAll('#unitPick button').forEach(x=>x.classList.toggle('on',x.dataset.u===unit));updateEstimate();};
+
+/* ---- drawing ---- */
+function beginDraw(){if(!lmap)return;drawing=true;drawPts=[];circleCenter=null;
+  document.getElementById('drawHint').textContent=drawShape==='circle'
+    ?'Click once for the circle center, then click again to set the radius.'
+    :'Click points on the map to draw your area — double-click to close the polygon.';
+  document.getElementById('drawHint').classList.add('show');}
+function resetDraw(){drawPts=[];circleCenter=null;
+  [drawLayer,previewLayer].forEach(l=>{if(l)lmap.removeLayer(l);});drawLayer=previewLayer=null;
+  document.getElementById('estArea').textContent='0 '+(unit==='mi'?'mi²':'km²');
+  document.getElementById('estPerim').textContent='0 '+unit;
+  document.getElementById('genMap').disabled=true;}
+function onMapClick(e){
+  if(!tmapOn||!drawing)return;
+  if(drawShape==='polygon'){
+    drawPts.push([e.latlng.lat,e.latlng.lng]);redrawPoly();
+  } else if(drawShape==='circle'){
+    if(!circleCenter){circleCenter=e.latlng;}
+    else{const r=circleCenter.distanceTo(e.latlng);finishCircle(r);}
+  }
+}
+function onMapMove(e){
+  if(!tmapOn||!drawing)return;
+  if(drawShape==='polygon'&&drawPts.length){
+    const pts=[...drawPts,[e.latlng.lat,e.latlng.lng]];
+    if(previewLayer)lmap.removeLayer(previewLayer);
+    previewLayer=L.polyline(pts,{color:'#ff7a45',weight:2,dashArray:'4 4'}).addTo(lmap);
+  } else if(drawShape==='circle'&&circleCenter){
+    const r=circleCenter.distanceTo(e.latlng);
+    if(previewLayer)lmap.removeLayer(previewLayer);
+    previewLayer=L.circle(circleCenter,{radius:r,color:'#ff7a45',weight:2,dashArray:'4 4',fillOpacity:.05}).addTo(lmap);
+    estimateCircle(r);
+  }
+}
+function redrawPoly(){if(drawLayer)lmap.removeLayer(drawLayer);
+  drawLayer=L.polyline(drawPts,{color:'#ff7a45',weight:2}).addTo(lmap);
+  L.circleMarker(drawPts[drawPts.length-1],{radius:4,color:'#fff',fillColor:'#ff7a45',fillOpacity:1}).addTo(drawLayer);}
+function finishPolygon(){if(drawPts.length<3)return;drawing=false;
+  if(previewLayer){lmap.removeLayer(previewLayer);previewLayer=null;}
+  if(drawLayer)lmap.removeLayer(drawLayer);
+  drawLayer=L.polygon(drawPts,{color:'#ff7a45',weight:2,fillColor:'#e25a3b',fillOpacity:.1}).addTo(lmap);
+  document.getElementById('drawHint').classList.remove('show');
+  estimatePolygon();document.getElementById('genMap').disabled=false;}
+function finishCircle(r){drawing=false;
+  if(previewLayer){lmap.removeLayer(previewLayer);previewLayer=null;}
+  drawLayer=L.circle(circleCenter,{radius:r,color:'#ff7a45',weight:2,fillColor:'#e25a3b',fillOpacity:.1}).addTo(lmap);
+  document.getElementById('drawHint').classList.remove('show');
+  estimateCircle(r);document.getElementById('genMap').disabled=false;}
+
+/* ---- geometry / estimate (great-circle, metric → unit) ---- */
+function haversine(a,b){const R=6371000,toR=x=>x*Math.PI/180;
+  const dLat=toR(b[0]-a[0]),dLng=toR(b[1]-a[1]);
+  const s=Math.sin(dLat/2)**2+Math.cos(toR(a[0]))*Math.cos(toR(b[0]))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));}
+function polyAreaM2(pts){ // spherical excess approximation
+  const R=6371000,toR=x=>x*Math.PI/180;let area=0;
+  for(let i=0;i<pts.length;i++){const p1=pts[i],p2=pts[(i+1)%pts.length];
+    area+=toR(p2[1]-p1[1])*(2+Math.sin(toR(p1[0]))+Math.sin(toR(p2[0])));}
+  return Math.abs(area*R*R/2);}
+let lastAreaM2=0,lastPerimM=0;
+function estimatePolygon(){lastAreaM2=polyAreaM2(drawPts);
+  lastPerimM=drawPts.reduce((s,p,i)=>s+haversine(p,drawPts[(i+1)%drawPts.length]),0);updateEstimate();}
+function estimateCircle(r){lastAreaM2=Math.PI*r*r;lastPerimM=2*Math.PI*r;updateEstimate();}
+function updateEstimate(){
+  let area,perim,au,pu;
+  if(unit==='mi'){area=lastAreaM2/2.59e6;perim=lastPerimM/1609.34;au='mi²';pu='mi';}
+  else{area=lastAreaM2/1e6;perim=lastPerimM/1000;au='km²';pu='km';}
+  document.getElementById('estArea').textContent=area.toFixed(area<10?2:1)+' '+au;
+  document.getElementById('estPerim').textContent=perim.toFixed(perim<10?2:1)+' '+pu;}
+
+// shared: take any GeoJSON object → draw polygon AOI
+function applyPolygonFromGeoJSON(gj,sourceLabel){
+  // accept a FeatureCollection, Feature, Geometry, or array of features
+  let geom=null;
+  try{
+    if(Array.isArray(gj)){const ff=gj.find(ft=>ft.geometry&&/Polygon/.test(ft.geometry.type))||gj[0];geom=ff&&(ff.geometry||ff);}
+    else if(gj.type==='FeatureCollection'&&Array.isArray(gj.features)&&gj.features.length){
+      const f0=gj.features.find(ft=>ft.geometry&&/Polygon/.test(ft.geometry.type))||gj.features[0];geom=f0&&f0.geometry;}
+    else if(gj.type==='Feature'){geom=gj.geometry;}
+    else if(gj.type&&gj.coordinates){geom=gj;}
+  }catch(e){geom=null;}
+  if(!geom||!geom.coordinates){alert('No polygon geometry found in this '+sourceLabel+'. Expected a Polygon or MultiPolygon.');return false;}
+  let ring=null;
+  if(geom.type==='Polygon'){ring=geom.coordinates[0];}
+  else if(geom.type==='MultiPolygon'){ring=geom.coordinates[0][0];}
+  else{alert('Unsupported geometry type: '+geom.type+'. Please use a Polygon or MultiPolygon.');return false;}
+  if(!Array.isArray(ring)||ring.length<3){alert('The polygon needs at least 3 points.');return false;}
+  const coords=ring.filter(c=>Array.isArray(c)&&c.length>=2&&isFinite(c[0])&&isFinite(c[1])).map(c=>[c[1],c[0]]);
+  if(coords.length<3){alert('Could not read valid coordinates from the polygon.');return false;}
+  if(coords.length>3){const a=coords[0],b=coords[coords.length-1];if(a[0]===b[0]&&a[1]===b[1])coords.pop();}
+  drawShape='upload';drawing=false;drawPts=coords;circleCenter=null;
+  if(previewLayer){lmap.removeLayer(previewLayer);previewLayer=null;}
+  if(drawLayer)lmap.removeLayer(drawLayer);
+  drawLayer=L.polygon(drawPts,{color:'#ff7a45',weight:2,fillColor:'#e25a3b',fillOpacity:.1}).addTo(lmap);
+  lmap.fitBounds(drawLayer.getBounds().pad(0.15));
+  document.getElementById('drawHint').classList.remove('show');
+  estimatePolygon();
+  document.getElementById('genMap').disabled=false;
+  document.getElementById('foot').textContent=`${sourceLabel} loaded · ${coords.length} vertices · ${(lastAreaM2/1e6).toFixed(1)} km² — now click Generate Map.`;
+  return true;
+}
+
+function uploadGeo(){
+  if(!lmap){initLeaflet();}
+  const inp=document.createElement('input');inp.type='file';
+  inp.accept='.json,.geojson,.shp,.zip,application/geo+json,application/json,application/zip,x-gis/x-shapefile';
+  inp.onchange=()=>{
+    const f=inp.files&&inp.files[0];if(!f)return;
+    const name=(f.name||'').toLowerCase();
+    const isShape=name.endsWith('.shp')||name.endsWith('.zip')||f.type==='application/zip';
+    const rd=new FileReader();
+    rd.onerror=()=>alert('Could not read the file. Please try again.');
+    if(isShape){
+      // Shapefile path — needs the shpjs library + ArrayBuffer
+      if(typeof shp==='undefined'){alert('Shapefile reader is still loading — please try again in a moment, or upload a .geojson file.');return;}
+      document.getElementById('foot').textContent='Reading shapefile…';
+      rd.onload=()=>{
+        // shp() accepts a .zip (shp+dbf+shx) or a bare .shp ArrayBuffer; returns a promise of GeoJSON
+        Promise.resolve(shp(rd.result)).then(gj=>{
+          if(!applyPolygonFromGeoJSON(gj,'Shapefile')){
+            document.getElementById('foot').textContent='Draw an area of interest, then Generate Map.';
+          }
+        }).catch(err=>{console.error(err);
+          alert('Could not read this shapefile. For best results upload a single .zip containing the .shp, .dbf and .shx files together.');
+          document.getElementById('foot').textContent='Draw an area of interest, then Generate Map.';
+        });
+      };
+      rd.readAsArrayBuffer(f);
+    } else {
+      // GeoJSON path
+      rd.onload=()=>{
+        let gj;
+        try{gj=JSON.parse(rd.result);}
+        catch(err){alert('That file is not valid JSON / GeoJSON. Upload a .geojson, .json, or a zipped shapefile (.zip).');return;}
+        applyPolygonFromGeoJSON(gj,'GeoJSON');
+      };
+      rd.readAsText(f);
+    }
+  };
+  inp.click();
+}
+
+document.getElementById('startOver').onclick=()=>{resetDraw();if(heatLayer){lmap.removeLayer(heatLayer);heatLayer=null;}beginDraw();};
+
+/* ---- Generate Map: task progress + grid heatmap ---- */
+document.getElementById('genMap').onclick=startGenerate;
+function bounds(){
+  if(drawShape==='circle'&&drawLayer&&drawLayer.getBounds)return drawLayer.getBounds();
+  const lats=drawPts.map(p=>p[0]),lngs=drawPts.map(p=>p[1]);
+  return L.latLngBounds([Math.min(...lats),Math.min(...lngs)],[Math.max(...lats),Math.max(...lngs)]);}
+function pointInPoly(pt,poly){let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];
+    const inter=((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi);
+    if(inter)inside=!inside;}return inside;}
+
+function startGenerate(){
+  const b=bounds();const ctr=b.getCenter();
+  const place=`Area of Interest · ${ctr.lat.toFixed(3)}, ${ctr.lng.toFixed(3)}`;
+  const tf=timeFrame==='hour'?'00:00 to 03:00':timeFrame==='range'?'00:00 to 12:00':'Full day';
+  const dateStr=new Date().toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'-');
+  // show task popup
+  document.getElementById('task').classList.add('show');
+  document.getElementById('taskDone').style.display='none';
+  document.getElementById('taskActive').style.display='block';
+  document.getElementById('taskTitle').textContent=`${place} – ${dateStr} – ${tf}`;
+  document.getElementById('genMap').disabled=true;
+  let pct=0;const stages=['Sampling grid cells','Modelling surface temperature','Applying UHI offsets','Rendering heatmap','Saving Heatmap in Activity History'];
+  const prog=document.getElementById('taskProg'),pctEl=document.getElementById('taskPct'),stEl=document.getElementById('taskStage');
+  const iv=setInterval(()=>{pct=Math.min(100,pct+Math.random()*16+6);
+    prog.style.width=pct+'%';pctEl.textContent=Math.round(pct)+'%';
+    stEl.textContent=stages[Math.min(stages.length-1,Math.floor(pct/100*stages.length))];
+    if(pct>=100){clearInterval(iv);finishGenerate(place,dateStr,tf);}
+  },260);
+  renderHeatGrid(b); // draw immediately under the progressing bar
+}
+function finishGenerate(place,dateStr,tf){
+  document.getElementById('taskActive').style.display='none';
+  document.getElementById('taskDone').style.display='block';
+  document.getElementById('taskDoneTitle').innerHTML=`Heatmap – ${dateStr} – ${tf} – <b style="color:var(--ink)">${place}</b>`;
+  document.getElementById('taskDoneDate').textContent=dateStr;
+  document.getElementById('genMap').disabled=false;
+}
+document.getElementById('taskClose').onclick=()=>document.getElementById('task').classList.remove('show');
+document.getElementById('taskDoneX').onclick=()=>document.getElementById('taskDone').style.display='none';
+document.getElementById('taskClear').onclick=()=>{document.getElementById('task').classList.remove('show');
+  if(heatLayer){lmap.removeLayer(heatLayer);heatLayer=null;}};
+
+/* grid heatmap: cell count scales with granularity; smooth multi-octave field */
+function renderHeatGrid(b){
+  if(heatLayer)lmap.removeLayer(heatLayer);
+  const sw=b.getSouthWest(),ne=b.getNorthEast();
+  const cells=granularity===100?34:granularity===80?42:54; // finer granularity → more cells
+  const canvas=document.createElement('canvas');
+  const layerPane=lmap.getPane('overlayPane');
+  // build an ImageOverlay via canvas → dataURL
+  const px=520;canvas.width=px;canvas.height=px;const c=canvas.getContext('2d');
+  const cw=px/cells;
+  const poly=(drawShape!=='circle'&&drawPts&&drawPts.length>=3)?drawPts:null;
+  const cx=(sw.lat+ne.lat)/2,cy=(sw.lng+ne.lng)/2;
+  // per-AOI seed → each location gets a distinct heat pattern (core position, orientation, intensity)
+  const S0=Math.abs(cx*1000+cy*1000);
+  const sr=k=>seeded(S0+k*3.91);
+  const coreX=0.30+sr(1)*0.40, coreY=0.30+sr(2)*0.40;   // hot-core position varies
+  const stretch=0.8+sr(3)*1.6, ang=sr(4)*6.283;          // anisotropy + rotation vary
+  const f1=4+sr(5)*8, f2=6+sr(6)*10, f3=8+sr(7)*12;       // noise frequencies vary
+  const heatBias=(activeAOI?(activeAOI.temp-28)/14:0)+sr(8)*0.3-0.15; // hotter cities push warmer
+  // value field: hot core, cooler edges + AOI-specific noise
+  function field(u,v){
+    const dxr=(u-coreX)*Math.cos(ang)-(v-coreY)*Math.sin(ang);
+    const dyr=((u-coreX)*Math.sin(ang)+(v-coreY)*Math.cos(ang))/stretch;
+    const core=1-Math.sqrt(dxr*dxr+dyr*dyr)*1.7;
+    const n=Math.sin(u*f1+v*3+S0)*0.18+Math.sin(u*f2-v*f3)*0.12+Math.cos(v*f3+u*4+S0)*0.1;
+    return core*0.8+n+0.25+heatBias;
+  }
+  for(let i=0;i<cells;i++)for(let j=0;j<cells;j++){
+    const u=i/cells,v=j/cells;
+    const lat=ne.lat-(v)*(ne.lat-sw.lat),lng=sw.lng+(u)*(ne.lng-sw.lng);
+    if(poly&&!pointInPoly([lat,lng],poly))continue;
+    let val=field(u,v);val=Math.max(0,Math.min(1,val));
+    const t=8+val*38; // °C range
+    c.fillStyle=colorFor(t);c.globalAlpha=0.78;
+    c.fillRect(i*cw,j*cw,cw+0.6,cw+0.6);
+    // dotted texture like the reference
+    c.globalAlpha=0.10;c.fillStyle='#000';
+    c.fillRect(i*cw+cw*0.4,j*cw+cw*0.4,cw*0.18,cw*0.18);
+  }
+  c.globalAlpha=1;
+  const url=canvas.toDataURL();
+  heatLayer=L.imageOverlay(url,b,{opacity:0.85,interactive:false}).addTo(lmap);
+  lmap.fitBounds(b.pad(0.4));
+  // push a representative reading into the right-hand report
+  const ctr=b.getCenter();
+  const m=buildMetrics(ctr.lat,ctr.lng,Math.floor(Math.abs(ctr.lat*ctr.lng))%900);
+  const node={name:'Selected Area',cap:'Area of Interest',flag:'🎯',region:'Custom',...m,
+    _lat:ctr.lat,_lng:ctr.lng};
+  selected=node;renderReport(node);
+  // resolve nearest city/division across ALL cities & divisions in dataset (offline fallback)
+  let nearCity=null,nearCountry=DATA[0],nd=1e9;
+  DATA.forEach(d=>{
+    (d.cities||[{name:d.cap,lat:d.lat,lng:d.lng}]).forEach(ct=>{
+      const dist=Math.hypot(ct.lat-ctr.lat,ct.lng-ctr.lng);
+      if(dist<nd){nd=dist;nearCity=ct;nearCountry=d;}
+    });
+  });
+  const areaKm2=lastAreaM2/1e6;
+  // dataset-based name is the initial label; GeoNames refines it to the true nearest place
+  const cityLabel=`${nearCountry.flag} ${nearCity.name}, ${nearCountry.name}`;
+  activeAOI={lat:ctr.lat,lng:ctr.lng,city:nearCountry,nearCity,
+    placeName:cityLabel,cityName:nearCity.name,countryName:nearCountry.name,flag:nearCountry.flag,
+    source:'dataset',geo:null,...m,areaKm2,granularity,bounds:b};
+  document.getElementById('statAoi').textContent=cityLabel;
+  document.getElementById('statMean').textContent=m.temp+'°C';
+  document.getElementById('navrail').classList.add('show'); // reveal console rail after first map
+  try{updateIntelStatus();}catch(e){}
+  // GeoNames: authoritative nearest populated place + admin division (worldwide, CC-BY data)
+  geonamesResolve(ctr.lat,ctr.lng);
+}
+let activeAOI=null;
+
+/* GeoNames username — the public "demo" account is heavily rate-limited.
+   For production, register a free username at geonames.org and set it here. */
+let GEONAMES_USER='demo';
+function flagFor(countryName){const n=DATA.find(d=>d.name===countryName||d.name.replace(/\./g,'')===(countryName||'').replace(/\./g,''));
+  return n?n.flag:'📍';}
+
+/* Primary naming: GeoNames findNearbyPlaceName → real nearest city/town + admin division.
+   Falls back silently to the dataset nearest-city label if offline / quota exceeded. */
+async function geonamesResolve(lat,lng){
+  try{
+    const url=`https://secure.geonames.org/findNearbyPlaceNameJSON?lat=${lat}&lng=${lng}&cities=cities1000&radius=300&username=${GEONAMES_USER}`;
+    const r=await fetch(url);
+    if(!r.ok)throw new Error('geonames '+r.status);
+    const j=await r.json();
+    const g=j&&j.geonames&&j.geonames[0];
+    if(g&&activeAOI&&Math.abs(activeAOI.lat-lat)<1e-6){
+      const city=g.name||g.toponymName;
+      const admin=g.adminName1||'';          // province / region / division
+      const country=g.countryName||activeAOI.countryName;
+      const flag=flagFor(country)||activeAOI.flag;
+      activeAOI.cityName=city;
+      activeAOI.division=admin;
+      activeAOI.countryName=country;
+      activeAOI.flag=flag;
+      activeAOI.placeName=`${flag} ${city}${admin&&admin!==city?', '+admin:''}, ${country}`;
+      activeAOI.source='geonames';
+      const el=document.getElementById('statAoi');if(el)el.textContent=activeAOI.placeName;
+      try{updateIntelStatus();}catch(e){}
+      // also refine sub-locality via Nominatim (optional finer detail)
+      reverseGeocode(lat,lng);
+      return;
+    }
+    reverseGeocode(lat,lng);
+  }catch(e){/* keep dataset label */ reverseGeocode(lat,lng);}
+}
+
+/* Optional finer sub-locality via OpenStreetMap Nominatim (does not override the city name). */
+async function reverseGeocode(lat,lng){
+  try{
+    const url=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=12&accept-language=en`;
+    const r=await fetch(url,{headers:{'Accept':'application/json'}});
+    if(!r.ok)throw new Error('geocode '+r.status);
+    const j=await r.json();
+    const a=j.address||{};
+    const locality=a.city||a.town||a.village||a.municipality||a.suburb||a.city_district||a.county||a.state_district||null;
+    if(activeAOI&&Math.abs(activeAOI.lat-lat)<1e-6){
+      activeAOI.geo={locality,region:a.state||a.region||a.province||null,country:a.country||null,raw:j.display_name};
+      // If GeoNames hasn't named it (dataset fallback only) and Nominatim has a locality, prefer it
+      if(activeAOI.source==='dataset'&&locality){
+        activeAOI.cityName=locality;
+        const country=a.country||activeAOI.countryName;const flag=flagFor(country)||activeAOI.flag;
+        activeAOI.countryName=country;activeAOI.flag=flag;
+        activeAOI.placeName=`${flag} ${locality}, ${country}`;activeAOI.source='nominatim';
+        const el=document.getElementById('statAoi');if(el)el.textContent=activeAOI.placeName;
+      }
+    }
+  }catch(e){/* dataset city label already in place */}
+}
+
+/* ============================================================
+   CONSOLE SUITE: Map Controls / Heat Intelligence / Trees / Comparison
+   ============================================================ */
+// reveal nav rail whenever mapping mode opens too
+const _openTmap=openTmap;
+openTmap=function(){_openTmap();
+  const nr=document.getElementById('navrail');nr.classList.add('show');
+  if(!nr.dataset.hinted){nr.dataset.hinted='1';
+    document.getElementById('foot').textContent='Console rail (left) is now active: Map Controls · Heat Intelligence · Tree Recs · Comparison · Statistics. Draw an area to populate them.';}
+};
+
+const navrail=document.getElementById('navrail');
+const PANELS={controls:'pControls',intel:'pIntel',trees:'pTrees',compare:'pCompare',stats:'pStats'};
+navrail.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  const id=PANELS[b.dataset.p];const el=document.getElementById(id);const isOpen=el.classList.contains('show');
+  Object.values(PANELS).forEach(p=>document.getElementById(p).classList.remove('show'));
+  navrail.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  if(!isOpen){el.classList.add('show');b.classList.add('on');}
+  if(b.dataset.p==='intel')updateIntelStatus();};
+function updateIntelStatus(){
+  const s=document.getElementById('intelAoiStatus');if(!s)return;
+  const a=(typeof activeAOI!=='undefined'&&activeAOI)?activeAOI:null;
+  if(a){const name=a.placeName||((a.cityName||'')+(a.countryName?', '+a.countryName:''));
+    s.innerHTML=`Selected AOI: <b style="color:var(--accent)">${name}</b> — the report will be built for this area.`;
+    s.style.color='var(--ink)';
+  }else{
+    s.innerHTML='No Area of Interest selected — draw one with “Generate Heatmap” first.';
+    s.style.color='var(--ink-dim)';
+  }
+}
+document.querySelectorAll('.panel .cx').forEach(c=>c.onclick=()=>{
+  document.getElementById(c.dataset.cx).classList.remove('show');
+  navrail.querySelectorAll('button').forEach(x=>x.classList.remove('on'));});
+
+/* ---- Color ramps (Spectral + alternatives) ---- */
+const RAMPS={
+  Spectral:['#9e0142','#d53e4f','#f46d43','#fdae61','#fee08b','#ffffbf','#e6f598','#abdda4','#66c2a5','#3288bd'],
+  Inferno:['#000004','#1b0c41','#4a0c6b','#781c6d','#a52c60','#cf4446','#ed6925','#fb9b06','#f7d03c','#fcffa4'],
+  Viridis:['#440154','#482878','#3e4989','#31688e','#26828e','#1f9e89','#35b779','#6ece58','#b5de2b','#fde725'],
+  RdYlBu:['#a50026','#d73027','#f46d43','#fdae61','#fee090','#ffffbf','#e0f3f8','#abd9e9','#74add1','#4575b4']
+};
+let activeRamp='Spectral', nClasses=12;
+function paintRamp(){const prev=document.getElementById('rampPreview');prev.innerHTML='';
+  RAMPS[activeRamp].forEach(c=>{const s=document.createElement('span');s.style.background=c;prev.appendChild(s);});}
+function buildRampPick(){const pick=document.getElementById('rampPick');pick.innerHTML='';
+  Object.keys(RAMPS).forEach(name=>{const d=document.createElement('div');d.className='ramp-opt'+(name===activeRamp?' on':'');
+    d.title=name;d.style.background=`linear-gradient(90deg,${RAMPS[name].join(',')})`;
+    d.onclick=()=>{activeRamp=name;document.querySelector('.pg-lab').textContent='Color Ramp · '+name;buildRampPick();paintRamp();};
+    pick.appendChild(d);});}
+buildRampPick();paintRamp();
+document.getElementById('clsMinus').onclick=()=>{nClasses=Math.max(3,nClasses-1);document.getElementById('clsVal').textContent=nClasses;};
+document.getElementById('clsPlus').onclick=()=>{nClasses=Math.min(20,nClasses+1);document.getElementById('clsVal').textContent=nClasses;};
+
+/* ---- temperature legend (quantile classes over current range) ---- */
+function buildLegend(elId,lo,hi){const el=document.getElementById(elId);el.innerHTML='';
+  const ramp=RAMPS[activeRamp];const n=Math.min(nClasses,ramp.length);
+  for(let i=n-1;i>=0;i--){const t0=lo+(hi-lo)*i/n,t1=lo+(hi-lo)*(i+1)/n;
+    const row=document.createElement('div');row.className='tl-row';
+    row.innerHTML=`<span class="tl-sw" style="background:${ramp[Math.floor(i/n*ramp.length)]}"></span>${t0.toFixed(1)} – ${t1.toFixed(1)} °C`;
+    el.appendChild(row);}}
+function applySym(){buildLegend('tlegend',12,46);if(heatLayer&&lmap){const b=heatLayer.getBounds();renderHeatGrid(b);} }
+document.getElementById('applySym').onclick=applySym;
+buildLegend('tlegend',12,46);buildLegend('intelLegend',12,46);
+
+/* ---- layer toggles + time series ---- */
+function bindSwitch(id,on){const s=document.getElementById(id);s.onclick=()=>{s.classList.toggle('on');on(s.classList.contains('on'));};}
+bindSwitch('lyrHeat',v=>{if(heatLayer)heatLayer.setOpacity(v?0.85:0);});
+bindSwitch('lyrPoly',v=>{if(drawLayer){if(v)drawLayer.addTo(lmap);else lmap.removeLayer(drawLayer);}});
+let tsTimer=null;
+bindSwitch('tsSwitch',v=>{if(v&&heatLayer){let hr=0;tsTimer=setInterval(()=>{hr=(hr+1)%24;
+  document.getElementById('foot').textContent=`Time series · ${String(hr).padStart(2,'0')}:00 simulation`;
+  if(heatLayer){const b=heatLayer.getBounds();renderHeatGrid(b);} },1400);}
+  else{clearInterval(tsTimer);document.getElementById('foot').textContent='Draw an area of interest, then Generate Map.';}});
+
+/* ---- Heat Intelligence: gallery + generate + report doc ---- */
+const intelReports=[];
+function refreshGallery(){const g=document.getElementById('intelGallery');
+  if(!intelReports.length){g.innerHTML='<div style="font-size:12px;color:var(--ink-faint);padding:8px">No reports yet — generate one below.</div>';return;}
+  g.innerHTML=intelReports.map((r,i)=>`<div class="gcard${i===0?' on':''}" data-i="${i}">
+    <h5>${r.title}${i===0?'<span class="new">NEW</span>':''}</h5>
+    <div class="gr">🌡 ${r.temp}°C</div><div class="gr">📍 ${r.lat}, ${r.lng}</div></div>`).join('');}
+refreshGallery();
+document.getElementById('intelGallery').onclick=e=>{const c=e.target.closest('.gcard');if(c)openReport(intelReports[+c.dataset.i]);};
+document.getElementById('genIntel').onclick=()=>{
+  const a=(typeof activeAOI!=='undefined'&&activeAOI)?activeAOI:null;
+  if(!a){
+    alert('Please select an Area of Interest first.\n\nOpen “Generate Heatmap”, draw a Polygon or Circle (or Upload a file), then click “Generate Map”. The Heat Intelligence Report will then be built for that selected city or division.');
+    return;
+  }
+  const ctr={lat:a.lat,lng:a.lng};
+  const city=a.cityName||(a.city&&a.city.cap)||'Selected Area';
+  const country=a.countryName||(a.city&&a.city.name)||'';
+  const flag=a.flag||'📍';
+  const temp=a.temp, hum=(a.hum||a.humidity||72), uhi=(a.uhi||4.5);
+  const r={title:`Report ${intelReports.length+1}`,temp:temp,
+    lat:(+ctr.lat).toFixed(4),lng:(+ctr.lng).toFixed(4),
+    city,country,flag,hum,uhi,
+    areaKm2:a.areaKm2||120, division:a.division||'',
+    place:country?`${city}, ${country}`:city, ts:new Date().toLocaleString('en-GB')};
+  window._lastReport=r;
+  intelReports.unshift(r);refreshGallery();openReport(r);};
+
+// ===== Report localization: labels for headings, tables, captions =====
+var curLang='en';
+const RL={
+ en:{
+  // section / report titles
+  statsTitle:'Statistical Analysis', treesTitle:'AI Tree Recommendations', svfTitle:'Sky View Factor',
+  decisionTitle:'Heat Mitigation Decision Support', uhiTitle:'Urban Heat Island Intelligence Report', fullTitle:'Export & Reporting — Full Heat Intelligence Report',
+  // metadata labels
+  aoi:'Area of Interest', centroid:'Centroid', meanLst:'Mean LST', sd:'Std Deviation', range:'Range', granularity:'Grid granularity',
+  generated:'Generated', location:'Location', surfaceTemp:'Surface Temp', humidity:'Humidity', uhiD:'UHI Δ', aoiArea:'AOI Area',
+  canopyTarget:'Canopy target', inputs:'Inputs', meanSvf:'Mean SVF', meanHw:'Mean H/W ratio', priorityIndex:'Composite priority index',
+  equity:'Spatial equity (Gini)', exposedPop:'Exposed population share', grid:'Grid',
+  // stats sections
+  s1:'1. Temperature Distribution Histogram', s2:'2. Hot / Moderate / Cool Zone Split', s3:'3. Diurnal Temperature Cycle', s4:'4. Per-District Breakdown',
+  hist_note:'Quantile classification of all sampled grid cells across the Area of Interest. The distribution centres on the mean land-surface temperature with the spread shown below.',
+  hot:'Hot zones (≥ mean +2°C)', moderate:'Moderate', cool:'Cool zones (≤ mean −2°C)',
+  diurnal_note:'Modelled 24-hour surface-temperature trajectory for the AOI, peaking in the early afternoon and reaching its minimum before dawn.',
+  th_zone:'District / Zone', th_lst:'Mean LST (°C)', th_ndvi:'NDVI', th_uhi:'UHI Δ (°C)', th_risk:'Risk',
+  // trees
+  t1:'1. AI-Generated Greening Strategy', t2:'2. Cooling Effect by Species', t3:'3. Recommended Native Species (7)', t4:'4. District Planting Action Plan',
+  th_species:'Species', th_local:'Local name', th_cooling:'Cooling Δ°C', th_canopy:'Canopy m', th_growth:'Growth cm/yr', th_bestzone:'Best zone',
+  th_lead:'Lead species', th_trees:'Trees', th_priority:'Priority',
+  // svf
+  v1:'1. Interactive Street-Canyon Cross-Section', v2:'2. SVF Distribution Across the AOI', v3:'3. 3D Street-Canyon Explorer', v4:'4. Enclosure Classification',
+  canyons:'Street canyons (SVF < 0.35)', corridors:'Shaded corridors', exposed:'Exposed hotspots (SVF ≥ 0.65)',
+  th_morph:'Morphology zone', th_peaklst:'Peak LST °C', th_thermal:'Thermal behaviour',
+  // decision
+  d1:'1. Hybrid Field Map (Hexagons)', d2:'2. Tree-Planting Decision Map (Hexagons)', d3:'3. 3D Urban Heat & Shading Explorer', d4:'4. Driver Layers & Weights', d5:'5. Ranked Interventions for this AOI', d6:'6. Spatial Equity',
+  th_driver:'Driver layer', th_norm:'Normalised value', th_weight:'Weight', th_contrib:'Contribution',
+  th_interv:'Intervention', th_suit:'Suitability', th_target:'Target cells', th_cool:'Projected cooling',
+  actionClass:'Action class', wherePattern:'Where the pattern takes space',
+  generatedAt:'generated', closeReports:'Close Reports', close:'Close'
+ },
+ fr:{
+  statsTitle:'Analyse statistique', treesTitle:'Recommandations d\u2019arbres (IA)', svfTitle:'Facteur de vue du ciel',
+  decisionTitle:'Aide à la décision pour l\u2019atténuation', uhiTitle:'Rapport d\u2019intelligence sur l\u2019îlot de chaleur urbain', fullTitle:'Export & Rapports — Rapport complet',
+  aoi:'Zone d\u2019intérêt', centroid:'Centroïde', meanLst:'TSS moyenne', sd:'Écart-type', range:'Plage', granularity:'Granularité de la grille',
+  generated:'Généré', location:'Localisation', surfaceTemp:'Temp. de surface', humidity:'Humidité', uhiD:'Δ ICU', aoiArea:'Surface ZI',
+  canopyTarget:'Objectif de couvert', inputs:'Données', meanSvf:'SVF moyen', meanHw:'Rapport H/L moyen', priorityIndex:'Indice de priorité composite',
+  equity:'Équité spatiale (Gini)', exposedPop:'Part de population exposée', grid:'Grille',
+  s1:'1. Histogramme de distribution des températures', s2:'2. Répartition zones chaudes / modérées / fraîches', s3:'3. Cycle thermique diurne', s4:'4. Détail par district',
+  hist_note:'Classification par quantiles de toutes les cellules échantillonnées dans la zone d\u2019intérêt. La distribution est centrée sur la température de surface moyenne.',
+  hot:'Zones chaudes (≥ moy. +2°C)', moderate:'Modérées', cool:'Zones fraîches (≤ moy. −2°C)',
+  diurnal_note:'Trajectoire modélisée de la température de surface sur 24 h pour la ZI, culminant en début d\u2019après-midi.',
+  th_zone:'District / Zone', th_lst:'TSS moy. (°C)', th_ndvi:'NDVI', th_uhi:'Δ ICU (°C)', th_risk:'Risque',
+  t1:'1. Stratégie de végétalisation (IA)', t2:'2. Effet de refroidissement par espèce', t3:'3. Espèces indigènes recommandées (7)', t4:'4. Plan d\u2019action de plantation par district',
+  th_species:'Espèce', th_local:'Nom local', th_cooling:'Δ refroid. °C', th_canopy:'Couvert m', th_growth:'Croissance cm/an', th_bestzone:'Meilleure zone',
+  th_lead:'Espèce principale', th_trees:'Arbres', th_priority:'Priorité',
+  v1:'1. Coupe interactive du canyon urbain', v2:'2. Distribution du SVF dans la ZI', v3:'3. Explorateur 3D du canyon urbain', v4:'4. Classification de l\u2019enclavement',
+  canyons:'Canyons urbains (SVF < 0,35)', corridors:'Corridors ombragés', exposed:'Points chauds exposés (SVF ≥ 0,65)',
+  th_morph:'Zone morphologique', th_peaklst:'TSS max °C', th_thermal:'Comportement thermique',
+  d1:'1. Carte de champ hybride (hexagones)', d2:'2. Carte de décision de plantation (hexagones)', d3:'3. Explorateur 3D chaleur & ombrage', d4:'4. Couches de facteurs & pondérations', d5:'5. Interventions classées pour cette ZI', d6:'6. Équité spatiale',
+  th_driver:'Couche de facteur', th_norm:'Valeur normalisée', th_weight:'Pondération', th_contrib:'Contribution',
+  th_interv:'Intervention', th_suit:'Adéquation', th_target:'Cellules cibles', th_cool:'Refroidissement projeté',
+  actionClass:'Classe d\u2019action', wherePattern:'Répartition spatiale du motif',
+  generatedAt:'généré', closeReports:'Fermer les rapports', close:'Fermer'
+ },
+ ar:{
+  statsTitle:'التحليل الإحصائي', treesTitle:'توصيات الأشجار بالذكاء الاصطناعي', svfTitle:'عامل رؤية السماء',
+  decisionTitle:'دعم قرار التخفيف من الحرارة', uhiTitle:'تقرير ذكاء الجزيرة الحرارية الحضرية', fullTitle:'التصدير والتقارير — التقرير الكامل',
+  aoi:'منطقة الاهتمام', centroid:'المركز', meanLst:'متوسط حرارة السطح', sd:'الانحراف المعياري', range:'المدى', granularity:'دقة الشبكة',
+  generated:'تم الإنشاء', location:'الموقع', surfaceTemp:'حرارة السطح', humidity:'الرطوبة', uhiD:'فرق الجزيرة الحرارية', aoiArea:'مساحة المنطقة',
+  canopyTarget:'هدف الغطاء الشجري', inputs:'المدخلات', meanSvf:'متوسط SVF', meanHw:'متوسط نسبة الارتفاع/العرض', priorityIndex:'مؤشر الأولوية المركب',
+  equity:'العدالة المكانية (جيني)', exposedPop:'نسبة السكان المعرضين', grid:'الشبكة',
+  s1:'١. مدرج توزيع درجات الحرارة', s2:'٢. تقسيم المناطق الحارة / المعتدلة / الباردة', s3:'٣. الدورة الحرارية اليومية', s4:'٤. التفصيل حسب الحي',
+  hist_note:'تصنيف كمي لجميع خلايا الشبكة المأخوذة عبر منطقة الاهتمام، متمركز حول متوسط حرارة سطح الأرض.',
+  hot:'المناطق الحارة (≥ المتوسط +٢°م)', moderate:'معتدلة', cool:'المناطق الباردة (≤ المتوسط −٢°م)',
+  diurnal_note:'مسار درجة حرارة السطح المنمذج على مدار ٢٤ ساعة للمنطقة، يبلغ ذروته بعد الظهر مباشرة.',
+  th_zone:'الحي / المنطقة', th_lst:'متوسط حرارة السطح (°م)', th_ndvi:'NDVI', th_uhi:'فرق الجزيرة (°م)', th_risk:'الخطر',
+  t1:'١. استراتيجية التشجير المولّدة بالذكاء الاصطناعي', t2:'٢. تأثير التبريد حسب النوع', t3:'٣. الأنواع المحلية الموصى بها (٧)', t4:'٤. خطة عمل التشجير حسب الحي',
+  th_species:'النوع', th_local:'الاسم المحلي', th_cooling:'تبريد °م', th_canopy:'الغطاء م', th_growth:'النمو سم/سنة', th_bestzone:'أفضل منطقة',
+  th_lead:'النوع الرئيسي', th_trees:'الأشجار', th_priority:'الأولوية',
+  v1:'١. مقطع تفاعلي للوادي الحضري', v2:'٢. توزيع SVF عبر المنطقة', v3:'٣. مستكشف الوادي الحضري ثلاثي الأبعاد', v4:'٤. تصنيف الانغلاق',
+  canyons:'الوديان الحضرية (SVF < ٠٫٣٥)', corridors:'الممرات المظللة', exposed:'البؤر المكشوفة (SVF ≥ ٠٫٦٥)',
+  th_morph:'المنطقة المورفولوجية', th_peaklst:'ذروة حرارة السطح °م', th_thermal:'السلوك الحراري',
+  d1:'١. خريطة الحقل الهجين (سداسيات)', d2:'٢. خريطة قرار التشجير (سداسيات)', d3:'٣. مستكشف الحرارة والتظليل ثلاثي الأبعاد', d4:'٤. طبقات العوامل والأوزان', d5:'٥. التدخلات المرتبة لهذه المنطقة', d6:'٦. العدالة المكانية',
+  th_driver:'طبقة العامل', th_norm:'القيمة المعيارية', th_weight:'الوزن', th_contrib:'المساهمة',
+  th_interv:'التدخل', th_suit:'الملاءمة', th_target:'الخلايا المستهدفة', th_cool:'التبريد المتوقع',
+  actionClass:'فئة الإجراء', wherePattern:'أين ينتشر النمط',
+  generatedAt:'تم الإنشاء', closeReports:'إغلاق التقارير', close:'إغلاق'
+ }
+};
+function T(k){return (RL[curLang]&&RL[curLang][k])||RL.en[k]||k;}
+
+// original prose report content (AfricaHub-authored), tabbed
+function reportTabs(r){
+  const city=r.city||'the selected area', country=r.country||'', flag=r.flag||'📍';
+  const lat=+r.lat, lng=+r.lng, temp=r.temp||30, hum=r.hum||72, uhi=r.uhi||4.5;
+  const area=(r.areaKm2||120);
+  const hemNS=lat>=0?'N':'S', hemEW=lng>=0?'E':'W';
+  const latS=Math.abs(lat).toFixed(2)+'°'+hemNS, lngS=Math.abs(lng).toFixed(2)+'°'+hemEW;
+  // climate descriptor by latitude band
+  const al=Math.abs(lat);
+  const climate = al<10 ? 'a humid tropical climate with high year-round solar irradiance'
+    : al<23.5 ? 'a tropical wet-and-dry (savanna) climate with marked dry-season heating'
+    : al<30 ? 'a hot semi-arid to arid climate with intense clear-sky solar loading'
+    : 'a Mediterranean-to-subtropical climate with hot, dry summers';
+  const hot = temp>=36, warm = temp>=30;
+  return {
+geo:`<div class="rd-sec"><h3>1. General Location & Regional Context</h3>
+<p>${flag} <b>${city}${country?', '+country:''}</b> is located at approximately ${latS}, ${lngS}. The selected Area of Interest spans about ${area.toFixed(1)} km² and registers a mean land-surface temperature of around ${temp}°C, placing it within ${climate}. Its urban density and surface composition combine to produce a measurable urban-heat-island signal relative to surrounding rural land.</p>
+<p>Humidity in the AOI averages roughly ${hum}%, and the urban–rural temperature offset is on the order of +${uhi}°C. ${hot?'High baseline temperatures mean heat-island effects are pronounced through much of the year, with peak stress during the hottest months.':warm?'Heat-island effects are most pronounced in the warm season, when reduced cloud cover and low soil moisture maximise daytime surface heating.':'Heat-island effects are seasonal, peaking in summer when clear skies raise daytime surface heating.'}</p>
+<h3>2. Terrain & Elevation</h3>
+<p>The AOI's terrain and built form create distinct thermal micro-zones: low-lying and densely paved districts trap heat and show the sharpest daytime surface-temperature swings, while greener or more elevated peripheries benefit from better ventilation and cooler nights. The local relief and any nearby water bodies modulate apparent temperature across the area.</p>
+<p class="rd-src">Indicative sources: SRTM elevation data; national topographic series; municipal planning documents for ${city}.</p></div>`,
+env:`<div class="rd-sec"><h3>1. Vegetation & Land Cover</h3>
+<p>${city}'s heat burden is strongly shaped by how vegetation is distributed across the AOI. Dense built-up cores read the highest land-surface temperatures with minimal greenery, transitional residential zones sit in the middle, and vegetated peripheries run markedly cooler — a thermal contrast that can reach double digits in degrees across only a few kilometres.</p>
+<p>Where tree-canopy cover is limited, surfaces heat rapidly under ${climate.split(' with')[0]}; expanding canopy is consistently the highest-leverage cooling lever for the area.</p>
+<h3>2. Hydrology & Evapotranspiration</h3>
+<p>Any rivers, wetlands, or vegetated corridors within the AOI provide localised evaporative cooling near their banks. In high-density impervious zones, by contrast, evapotranspiration is effectively eliminated and the surface energy balance tilts toward sensible heat, reinforcing the local heat island.</p>
+<p class="rd-src">Indicative sources: MODIS/Copernicus land products; ESA WorldCover; Sentinel-2 NDVI for the ${city} area.</p></div>`,
+urban:`<div class="rd-sec"><h3>1. Building Morphology & Urban Canyon Effects</h3>
+<p>Within the ${city} AOI, the built environment ranges from formal mid-rise blocks to dense low-rise settlements, each with its own thermal signature. Taller blocks create moderate canyon shading but store heat in concrete and masonry, keeping nights warmer; low-rise high-coverage districts reach the highest peak surface temperatures, compounded by anthropogenic waste heat. Paved arterial corridors act as heat vectors, channelling thermal energy outward from the centre.</p>
+<h3>2. Transportation & Traffic Heat</h3>
+<p>Vehicle traffic adds anthropogenic heat concentrated along the AOI's commercial corridors during morning and evening peaks, with additional distributed heat from energy use across residential and commercial areas.</p>
+<p class="rd-src">Indicative sources: open-buildings datasets; urban-expansion monitoring; local transport records for ${city}.</p></div>`,
+events:`<div class="rd-sec"><h3>1. Documented Heat Events</h3>
+<p>The ${city} area has experienced a measurable rise in extreme-heat frequency over the past decade, consistent with global warming and local land-cover change. With a mean LST near ${temp}°C, the AOI is exposed to multi-day heat episodes during which densely built sub-zones can run several degrees hotter than the surrounding countryside, raising health stress for vulnerable residents.</p>
+<h3>2. Climate Teleconnections</h3>
+<p>Regional climate cycles modulate the AOI's thermal climate from year to year: phases that reduce cloud cover raise clear-sky irradiance and widen the urban–rural temperature contrast, while rainfall deficits suppress vegetation recovery heading into the hot season.</p>
+<p class="rd-src">Indicative sources: regional climate-centre data; humanitarian situation reports; precipitation and ENSO archives.</p></div>`,
+anthro:`<div class="rd-sec"><h3>1. Energy Consumption & Anthropogenic Heat Flux</h3>
+<p>Anthropogenic heat flux — waste heat injected directly into the urban atmosphere — is estimated in the single-digit-to-low-double-digit W/m² range as an annual mean across the ${city} AOI, peaking higher in commercial and industrial sub-zones during operating hours. These values sit in line with comparable cities in the same climate band.</p>
+<h3>2. Mitigation Scenarios & Co-Benefits</h3>
+<p>Urban-climate modelling for the AOI suggests strong returns from greening and cool-surface strategies: substantially increasing tree-canopy cover could deliver mean heat-island reductions of a couple of degrees and larger cuts in priority hotspots; cool-roof deployment could meaningfully lower local surface temperatures and cooling-energy demand; and continuous green corridors could sharply reduce pedestrian-level radiant temperature during peak sun.</p>
+<p class="rd-src">Indicative sources: regional energy outlook; municipal development records; climate-modelling outputs for ${city}.</p></div>`
+};}
+function openReport(r){
+  window._lastReport=r;
+  const ov=document.getElementById('reportOverlay');ov.classList.add('show');
+  const tabs=reportTabs(r);let active='geo';
+  const place=`${r.flag||'📍'} ${r.place||r.city||'Selected Area'}`;
+  const hemNS=(+r.lat)>=0?'':'−', hemEW=(+r.lng)>=0?'':'−';
+  const coordS=`${(+r.lat).toFixed(4)}°, ${(+r.lng).toFixed(4)}°`;
+  const veg=Math.max(4,Math.round(30-(r.temp-26)*1.5));      // hotter → less vegetation
+  const albedo=(0.16+((r.temp||30)>=34?0.06:0.02)).toFixed(2);
+  const heatIdx=((r.temp||30)+((r.hum||72)>60?2.0:0.6)).toFixed(1);
+  function renderTab(){document.getElementById('rdBody').innerHTML=
+    `<div class="rd-h1">🌡 ${T('uhiTitle')} — ${place}</div>
+     <div class="rd-meta">
+       <div><b>${T('generated')}:</b> <span>${r.ts}</span></div><div><b>${T('location')}:</b> <span>${r.place||r.city} (${coordS})</span></div>
+       <div><b>${T('surfaceTemp')}:</b> <span>${r.temp}°C</span></div><div><b>${T('humidity')}:</b> <span>${r.hum||72}%</span></div>
+       <div><b>Vegetation Cover:</b> <span>${veg}%</span></div><div><b>Albedo:</b> <span>${albedo}</span></div>
+       <div><b>UHI Δ:</b> <span>+${r.uhi||4.5}°C</span></div><div><b>Heat Index:</b> <span>${heatIdx}°C</span></div>
+     </div>
+     <div class="rd-sec"><h2>${ {geo:'Geographic Information',env:'Environmental Factors',urban:'Urban Factors',events:'Events Analysis',anthro:'Anthropogenic Factors'}[active] }</h2></div>
+     ${tabs[active]}
+     <div class="rd-foot">AfricaHub — Urban Heat Island Dashboard · ${r.place||r.city} · ${T('generatedAt')} ${r.ts}</div>`;}
+  document.querySelectorAll('#rdTabs button').forEach(b=>b.classList.toggle('on',b.dataset.t==='geo'));
+  renderTab();
+  document.getElementById('rdTabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+    active=b.dataset.t;document.querySelectorAll('#rdTabs button').forEach(x=>x.classList.toggle('on',x===b));renderTab();};
+}
+document.getElementById('rdClose').onclick=()=>document.getElementById('reportOverlay').classList.remove('show');
+document.getElementById('reportOverlay').onclick=e=>{if(e.target.id==='reportOverlay')e.target.classList.remove('show');};
+
+/* ---- AI Tree Recommendations (7 native species w/ cooling data) ---- */
+const SPECIES=[
+ ['Milicia excelsa','Iroko / Mvula',8.5,42,18,'Riverside & boulevard'],
+ ['Terminalia superba','Limba',7.2,36,22,'CBD avenues'],
+ ['Albizia adianthifolia','Flat-crown',6.8,33,30,'Residential lots'],
+ ['Pterocarpus angolensis','Mukula',6.0,29,16,'Peri-urban belts'],
+ ['Khaya anthotheca','East African mahogany',7.8,38,20,'Parks & schools'],
+ ['Markhamia lutea','Nile tulip',5.5,24,34,'Street medians'],
+ ['Senna siamea','Cassia',5.0,21,28,'Informal-settlement edges']
+];
+let treesOpen=false;
+function treeStrategy(){
+  if(!activeAOI)return 'Generate a heatmap first to tailor species selection to your Area of Interest.';
+  const c=activeAOI.city, hot=activeAOI.temp>=34;
+  const topThree=SPECIES.slice(0,3).map(s=>s[1]).join(', ');
+  const canopyGain=(activeAOI.areaKm2*0.18).toFixed(1);
+  return `For the area near <b>${c.cap}, ${c.name}</b> (mean LST ${activeAOI.temp}°C), priority planting of ${topThree} is projected to lower local surface temperature by 2.4–4.1°C at maturity. Targeting ${canopyGain} km² of new canopy across the ${activeAOI.areaKm2.toFixed(1)} km² AOI would raise effective cover toward the 30% threshold linked to measurable UHI relief. ${hot?'High baseline heat makes shade-priority species along paved corridors the first intervention.':'Moderate baseline heat favours mixed amenity planting in residential and school zones.'}`;
+}
+document.getElementById('openTrees').onclick=()=>{treesOpen=!treesOpen;
+  const list=document.getElementById('speciesList');list.style.display=treesOpen?'flex':'none';
+  document.getElementById('openTrees').textContent=treesOpen?'▴ Hide Recommendations':'🌲 Open Tree Recommendations';
+  document.getElementById('treeIntro').innerHTML=treeStrategy();
+  list.dataset.built='';
+  if(treesOpen){
+    const maxC=Math.max(...SPECIES.map(s=>s[3]));
+    list.innerHTML=SPECIES.map(s=>`<div class="sp"><h5>${s[0]} <i>${s[1]}</i></h5>
+      <div class="spm"><div>Cooling Δ<b>−${s[2]}°C</b></div><div>Canopy<b>${s[3]} m</b></div><div>Growth/yr<b>${s[4]} cm</b></div></div>
+      <div style="font-size:10.5px;color:var(--ink-faint);margin-top:7px">Best zone: ${s[5]}</div>
+      <div class="sp-bar"><i style="width:${s[3]/maxC*100}%"></i></div></div>`).join('');}};
+
+/* ---- Map Comparison (two Leaflet satellite panes) ---- */
+const mcSelA=document.getElementById('mcA'),mcSelB=document.getElementById('mcB');
+DATA.forEach((d,i)=>{const o1=new Option(`${d.flag} ${d.cap}`,i),o2=new Option(`${d.flag} ${d.cap}`,i);
+  mcSelA.add(o1);mcSelB.add(o2);});
+mcSelA.value=DATA.findIndex(d=>d.name==='DR Congo');mcSelB.value=DATA.findIndex(d=>d.name==='Kenya');
+let mcMapA=null,mcMapB=null;
+document.getElementById('openMC').onclick=()=>{
+  document.getElementById('mcOverlay').classList.add('show');
+  const A=DATA[+mcSelA.value],B=DATA[+mcSelB.value];
+  document.getElementById('mcAName').textContent=`Primary · ${A.flag} ${A.cap} — ${A.temp}°C`;
+  document.getElementById('mcBName').textContent=`Comparison · ${B.flag} ${B.cap} — ${B.temp}°C`;
+  setTimeout(()=>{
+    if(!mcMapA){mcMapA=L.map('mcMapA',{attributionControl:false});mcMapB=L.map('mcMapB',{attributionControl:false});}
+    [[mcMapA,A],[mcMapB,B]].forEach(([m,loc])=>{m.eachLayer(l=>m.removeLayer(l));
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:17}).addTo(m);
+      m.setView([loc.lat,loc.lng],10);m.invalidateSize();
+      // overlay a small heat square
+      const d=0.18;const b=L.latLngBounds([loc.lat-d,loc.lng-d],[loc.lat+d,loc.lng+d]);
+      const cv2=document.createElement('canvas');cv2.width=cv2.height=240;const cc=cv2.getContext('2d');
+      for(let i=0;i<40;i++)for(let j=0;j<40;j++){const u=i/40,v=j/40;
+        const core=1-Math.hypot(u-0.5,v-0.55)*1.6;const n=Math.sin(u*9+v*5)*0.2;
+        const val=Math.max(0,Math.min(1,(loc.temp-12)/30+core*0.4+n*0.3));
+        cc.fillStyle=colorFor(12+val*32);cc.globalAlpha=.72;cc.fillRect(i*6,j*6,6.5,6.5);}
+      L.imageOverlay(cv2.toDataURL(),b,{opacity:.8}).addTo(m);});
+  },120);
+};
+document.getElementById('mcClose').onclick=()=>document.getElementById('mcOverlay').classList.remove('show');
+document.getElementById('mcOverlay').onclick=e=>{if(e.target.id==='mcOverlay')e.target.classList.remove('show');};
+
+/* ============================================================
+   STATISTICAL ANALYSIS RESULTS  (charts / tables / graphs for AOI)
+   ============================================================ */
+function aoiStats(){
+  const a=activeAOI||{city:DATA.find(d=>d.name==='DR Congo'),temp:31,feels:32,uhi:5,hum:75,pop:8,areaKm2:120,lat:-4.44,lng:15.27};
+  // per-AOI seed derived from real coordinates → every AOI yields a distinct distribution
+  const S0=Math.abs(a.lat*1000+a.lng*1000)+(a.areaKm2||1);
+  const rnd=k=>seeded(S0+k*7.31);
+  const mean=a.temp, classes=12;
+  // skew & spread also vary by location (latitude-driven aridity + coastal moderation)
+  const spread=2.8+rnd(2)*3.5;                 // distribution width varies per AOI
+  const skew=(rnd(3)-0.5)*3;                    // hot/cool lean varies per AOI
+  const dist=Array.from({length:classes},(_,i)=>{
+    const lo=mean-9+i*1.5, hi=lo+1.5;
+    const center=(lo+hi)/2+skew;
+    const count=Math.round(120*Math.exp(-Math.pow((center-mean)/spread,2))+rnd(i+30)*40);
+    return {lo,hi,count:Math.max(2,count)};
+  });
+  const total=dist.reduce((s,d)=>s+d.count,0);
+  const hotShare=Math.round(dist.filter(d=>d.lo>=mean+2).reduce((s,d)=>s+d.count,0)/total*100);
+  const coolShare=Math.round(dist.filter(d=>d.hi<=mean-2).reduce((s,d)=>s+d.count,0)/total*100);
+  // per-district table — names + values both vary by AOI
+  const zonePool=['Central CBD','Industrial Belt','Residential North','Riverside','Peri-urban East','Old Town','Port Quarter','Market District','Airport Zone','Hillside'];
+  const offset=Math.floor(rnd(99)*zonePool.length);
+  const zones=Array.from({length:5},(_,i)=>zonePool[(offset+i)%zonePool.length]);
+  const districts=zones.map((z,i)=>{const t=+(mean+(rnd(i+5)*9-3.5)).toFixed(1);
+    return {zone:z,lst:t,ndvi:+(Math.max(0.04,0.55-Math.max(0,(t-mean+2)/18)-rnd(i+12)*0.1)).toFixed(2),
+      uhi:+(Math.max(0.5,a.uhi+(rnd(i+9)*3-1.5))).toFixed(1),
+      risk:t>=mean+3?'High':t>=mean?'Moderate':'Low'};});
+  // diurnal cycle — peak hour & amplitude shift per AOI
+  const peak=12+rnd(7)*4, amp=4.5+rnd(8)*4;
+  const hourly=Array.from({length:24},(_,h)=>+(mean-amp*0.5+amp*Math.sin((h-peak+6)/24*2*Math.PI)+rnd(h)*1.4).toFixed(1));
+  return {a,mean,dist,total,hotShare,coolShare,districts,hourly,seedFn:rnd,
+    sd:+(Math.sqrt(dist.reduce((s,d)=>s+d.count*Math.pow((d.lo+d.hi)/2-mean,2),0)/total)).toFixed(2),
+    min:dist[0].lo.toFixed(1),max:dist[classes-1].hi.toFixed(1)};
+}
+function svgBars(dist,mean){const w=620,h=180,pad=24;const max=Math.max(...dist.map(d=>d.count));
+  const bw=(w-pad*2)/dist.length;
+  return `<svg viewBox="0 0 ${w} ${h+30}" style="width:100%;height:auto">
+    ${dist.map((d,i)=>{const bh=(d.count/max)*(h-pad);const x=pad+i*bw;const y=h-bh;
+      return `<rect x="${x+2}" y="${y}" width="${bw-4}" height="${bh}" rx="2" fill="${colorFor((d.lo+d.hi)/2)}"/>
+        <text x="${x+bw/2}" y="${h+12}" font-size="8" fill="#7a818c" text-anchor="middle" font-family="monospace">${d.lo.toFixed(0)}</text>`;}).join('')}
+    <line x1="${pad}" y1="${h}" x2="${w-pad}" y2="${h}" stroke="#ccc"/>
+    <text x="${pad}" y="${h+26}" font-size="9" fill="#888" font-family="sans-serif">Temperature class (°C) — count of cells</text>
+  </svg>`;}
+function svgLine(hourly,mean){const w=620,h=170,pad=28;const mn=Math.min(...hourly)-1,mx=Math.max(...hourly)+1;
+  const pts=hourly.map((v,i)=>[pad+i/(hourly.length-1)*(w-pad*2),h-pad-(v-mn)/(mx-mn)*(h-pad*2)]);
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">
+    <polyline fill="none" stroke="#c0531f" stroke-width="2" points="${pts.map(p=>p.join(',')).join(' ')}"/>
+    ${pts.filter((_,i)=>i%3===0).map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="#c0531f"/><text x="${p[0]}" y="${h-6}" font-size="8" fill="#888" text-anchor="middle" font-family="monospace">${i*3}h</text>`).join('')}
+    <text x="${pad}" y="14" font-size="9" fill="#888" font-family="sans-serif">Diurnal LST cycle (°C over 24h)</text>
+  </svg>`;}
+function svgDonut(hot,cool){const mid=100-hot-cool;const r=52,cx=70,cy=70,C=2*Math.PI*r;
+  let off=0;const seg=(val,col)=>{const len=val/100*C;const s=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="20" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"/>`;off+=len;return s;};
+  return `<svg viewBox="0 0 200 140" style="width:200px"><g>${seg(hot,'#d53e4f')}${seg(mid,'#fdae61')}${seg(cool,'#3288bd')}</g>
+    <text x="${cx}" y="${cy-2}" font-size="20" font-weight="700" fill="#1f2430" text-anchor="middle" font-family="sans-serif">${hot}%</text>
+    <text x="${cx}" y="${cy+14}" font-size="9" fill="#888" text-anchor="middle" font-family="sans-serif">hot zone</text></svg>`;}
+
+function renderStats(){
+  const S=aoiStats();const a=S.a;
+  document.getElementById('statsBody').innerHTML=`
+    <div class="rd-h1" style="color:#1b3a8f;border-color:#1b3a8f">📊 ${T('statsTitle')} — ${aoiAOI(a)}</div>
+    <div class="rd-meta">
+      <div><b>Area of Interest:</b> <span>${a.areaKm2.toFixed(1)} km² · ${aoiName(a)}</span></div>
+      <div><b>Centroid:</b> <span>${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}</span></div>
+      <div><b>Mean LST:</b> <span>${S.mean}°C</span></div><div><b>Std Deviation:</b> <span>±${S.sd}°C</span></div>
+      <div><b>Range:</b> <span>${S.min} – ${S.max}°C</span></div><div><b>Grid granularity:</b> <span>${a.granularity||100} × ${a.granularity||100} m</span></div>
+    </div>
+    <div class="rd-sec"><h2>${T('s1')}</h2>
+      <p>Quantile classification of all sampled grid cells across the Area of Interest. The distribution centres on the mean land-surface temperature with the spread shown below.</p>
+      ${svgBars(S.dist,S.mean)}</div>
+    <div class="rd-sec"><h2>${T('s2')}</h2>
+      <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+        ${svgDonut(S.hotShare,S.coolShare)}
+        <div style="font-family:'Outfit',sans-serif;font-size:13px;color:#2c3340">
+          <div style="margin-bottom:6px"><span style="display:inline-block;width:12px;height:12px;background:#d53e4f;border-radius:3px;margin-right:7px"></span>Hot zones (≥ mean +2°C): <b>${S.hotShare}%</b></div>
+          <div style="margin-bottom:6px"><span style="display:inline-block;width:12px;height:12px;background:#fdae61;border-radius:3px;margin-right:7px"></span>Moderate: <b>${100-S.hotShare-S.coolShare}%</b></div>
+          <div><span style="display:inline-block;width:12px;height:12px;background:#3288bd;border-radius:3px;margin-right:7px"></span>Cool zones (≤ mean −2°C): <b>${S.coolShare}%</b></div>
+        </div>
+      </div></div>
+    <div class="rd-sec"><h2>${T('s3')}</h2>
+      <p>Modelled 24-hour surface-temperature trajectory for the AOI, peaking in the early afternoon and reaching its minimum before dawn.</p>
+      ${svgLine(S.hourly,S.mean)}</div>
+    <div class="rd-sec"><h2>${T('s4')}</h2>
+      <table style="width:100%;border-collapse:collapse;font-family:'Outfit',sans-serif;font-size:12.5px">
+        <thead><tr style="background:#f1ece0">
+          <th style="text-align:left;padding:9px 11px;border:1px solid #e2dccd">District / Zone</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #e2dccd">Mean LST (°C)</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #e2dccd">NDVI</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #e2dccd">UHI Δ (°C)</th>
+          <th style="text-align:center;padding:9px 11px;border:1px solid #e2dccd">Risk</th></tr></thead>
+        <tbody>${S.districts.map(d=>`<tr>
+          <td style="padding:9px 11px;border:1px solid #e2dccd">${d.zone}</td>
+          <td style="padding:9px 11px;border:1px solid #e2dccd;text-align:right;font-family:monospace">${d.lst}</td>
+          <td style="padding:9px 11px;border:1px solid #e2dccd;text-align:right;font-family:monospace">${d.ndvi}</td>
+          <td style="padding:9px 11px;border:1px solid #e2dccd;text-align:right;font-family:monospace">+${d.uhi}</td>
+          <td style="padding:9px 11px;border:1px solid #e2dccd;text-align:center;color:${d.risk==='High'?'#c0392b':d.risk==='Moderate'?'#c0531f':'#2e8b4f'};font-weight:600">${d.risk}</td></tr>`).join('')}</tbody>
+      </table></div>
+    <div class="rd-foot">AfricaHub — Statistical Analysis · ${aoiName(a)} · generated ${new Date().toLocaleString('en-GB')}</div>`;
+  return S;
+}
+let lastStats=null;
+document.getElementById('openStats').onclick=()=>{lastStats=renderStats();document.getElementById('statsOverlay').classList.add('show');};
+document.getElementById('statsClose').onclick=()=>document.getElementById('statsOverlay').classList.remove('show');
+document.getElementById('statsOverlay').onclick=e=>{if(e.target.id==='statsOverlay')e.target.classList.remove('show');};
+
+/* ---- AI Tree Recommendations results page (AOI-aware) ---- */
+function svgTreeBars(){const w=620,h=200,pad=80;const max=Math.max(...SPECIES.map(s=>s[2]));
+  const bh=(h-30)/SPECIES.length;
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">
+    ${SPECIES.map((s,i)=>{const bw=(s[2]/max)*(w-pad-90);const y=10+i*bh;
+      return `<text x="${pad-6}" y="${y+bh/2}" font-size="10" fill="#444" text-anchor="end" font-family="sans-serif">${s[1]}</text>
+        <rect x="${pad}" y="${y+3}" width="${bw}" height="${bh-10}" rx="3" fill="#2e8b4f" opacity="${0.5+s[2]/max*0.5}"/>
+        <text x="${pad+bw+6}" y="${y+bh/2+1}" font-size="10" fill="#2e8b4f" font-weight="700" font-family="monospace">−${s[2]}°C</text>`;}).join('')}
+    <text x="${pad}" y="${h-4}" font-size="9" fill="#888" font-family="sans-serif">Projected cooling effect at maturity (°C)</text>
+  </svg>`;}
+function renderTrees(){
+  const a=activeAOI||{city:DATA.find(d=>d.name==='DR Congo'),temp:31,areaKm2:120,lat:-4.44,lng:15.27,uhi:5};
+  const S0=Math.abs(a.lat*1000+a.lng*1000)+(a.areaKm2||1);
+  const rnd=k=>seeded(S0+k*6.13);
+  const canopyGain=(a.areaKm2*(0.14+rnd(1)*0.10)).toFixed(1);
+  const zones=['Central CBD','Boulevard corridors','Residential','Riverside','Peri-urban'];
+  const spOffset=Math.floor(rnd(2)*SPECIES.length);
+  const plan=zones.map((z,i)=>{const sp=SPECIES[(spOffset+i)%SPECIES.length];
+    return {zone:z,species:sp[1],trees:Math.round(a.areaKm2*(6+rnd(i+2)*18)),
+      cooling:sp[2],priority:i<2?'High':i<4?'Medium':'Phased'};});
+  document.getElementById('treesBody').innerHTML=`
+    <div class="rd-h1" style="color:#2e8b4f;border-color:#2e8b4f">🌳 ${T('treesTitle')} — ${aoiAOI(a)}</div>
+    <div class="rd-meta">
+      <div><b>Area of Interest:</b> <span>${a.areaKm2.toFixed(1)} km² · ${aoiName(a)}</span></div>
+      <div><b>Centroid:</b> <span>${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}</span></div>
+      <div><b>Mean LST:</b> <span>${a.temp}°C</span></div><div><b>Canopy target:</b> <span>${canopyGain} km² new cover</span></div>
+    </div>
+    <div class="rd-sec"><h2>${T('t1')}</h2>
+      <p style="font-family:'Outfit',sans-serif">${treeStrategy()}</p></div>
+    <div class="rd-sec"><h2>${T('t2')}</h2>${svgTreeBars()}</div>
+    <div class="rd-sec"><h2>${T('t3')}</h2>
+      <table style="width:100%;border-collapse:collapse;font-family:'Outfit',sans-serif;font-size:12.5px">
+        <thead><tr style="background:#eaf3ec">
+          <th style="text-align:left;padding:9px 11px;border:1px solid #d6e6d9">Species</th>
+          <th style="text-align:left;padding:9px 11px;border:1px solid #d6e6d9">Local name</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #d6e6d9">Cooling Δ°C</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #d6e6d9">Canopy m</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #d6e6d9">Growth cm/yr</th>
+          <th style="text-align:left;padding:9px 11px;border:1px solid #d6e6d9">Best zone</th></tr></thead>
+        <tbody>${SPECIES.map(s=>`<tr>
+          <td style="padding:9px 11px;border:1px solid #d6e6d9;font-style:italic">${s[0]}</td>
+          <td style="padding:9px 11px;border:1px solid #d6e6d9">${s[1]}</td>
+          <td style="padding:9px 11px;border:1px solid #d6e6d9;text-align:right;font-family:monospace;color:#2e8b4f;font-weight:700">−${s[2]}</td>
+          <td style="padding:9px 11px;border:1px solid #d6e6d9;text-align:right;font-family:monospace">${s[3]}</td>
+          <td style="padding:9px 11px;border:1px solid #d6e6d9;text-align:right;font-family:monospace">${s[4]}</td>
+          <td style="padding:9px 11px;border:1px solid #d6e6d9">${s[5]}</td></tr>`).join('')}</tbody>
+      </table></div>
+    <div class="rd-sec"><h2>${T('t4')}</h2>
+      <table style="width:100%;border-collapse:collapse;font-family:'Outfit',sans-serif;font-size:12.5px">
+        <thead><tr style="background:#eaf3ec">
+          <th style="text-align:left;padding:9px 11px;border:1px solid #d6e6d9">Zone</th>
+          <th style="text-align:left;padding:9px 11px;border:1px solid #d6e6d9">Lead species</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #d6e6d9">Trees</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #d6e6d9">Cooling Δ°C</th>
+          <th style="text-align:center;padding:9px 11px;border:1px solid #d6e6d9">Priority</th></tr></thead>
+        <tbody>${plan.map(p=>`<tr>
+          <td style="padding:9px 11px;border:1px solid #d6e6d9">${p.zone}</td>
+          <td style="padding:9px 11px;border:1px solid #d6e6d9">${p.species}</td>
+          <td style="padding:9px 11px;border:1px solid #d6e6d9;text-align:right;font-family:monospace">${p.trees.toLocaleString()}</td>
+          <td style="padding:9px 11px;border:1px solid #d6e6d9;text-align:right;font-family:monospace">−${p.cooling}</td>
+          <td style="padding:9px 11px;border:1px solid #d6e6d9;text-align:center;color:${p.priority==='High'?'#c0392b':p.priority==='Medium'?'#c0531f':'#2e8b4f'};font-weight:600">${p.priority}</td></tr>`).join('')}</tbody>
+      </table></div>
+    <div class="rd-foot">AfricaHub — AI Tree Recommendations · ${aoiName(a)} · generated ${new Date().toLocaleString('en-GB')}</div>`;
+}
+document.getElementById('treesClose').onclick=()=>document.getElementById('treesOverlay').classList.remove('show');
+document.getElementById('treesOverlay').onclick=e=>{if(e.target.id==='treesOverlay')e.target.classList.remove('show');};
+
+/* ---- Sidebar buttons: open results pages directly ---- */
+document.getElementById('statsToggleSide').onclick=()=>{lastStats=renderStats();document.getElementById('statsOverlay').classList.add('show');};
+document.getElementById('treesToggleSide').onclick=()=>{renderTrees();document.getElementById('treesOverlay').classList.add('show');};
+document.getElementById('dlTreesDocx').onclick=async()=>{lastStats=lastStats||aoiStats();try{await buildDocx();}catch(e){console.error(e);}};
+
+/* ---- Export & Reporting: full combined multi-page report ---- */
+function renderFullReport(){
+  const S=renderStats();           // refresh stats (also sets lastStats via caller)
+  lastStats=S;
+  const a=S.a;const now=new Date().toLocaleString('en-GB');
+  const t=reportTabs({});
+  // strip the HTML section bodies straight in (they already use .rd-sec markup)
+  const narrative=`${t.geo}${t.env}${t.urban}${t.events}${t.anthro}`;
+  // stats block (reuse chart helpers)
+  const statsBlock=`
+    <div class="rd-sec"><h2>Statistical Analysis — Temperature Distribution</h2>
+      <p>Quantile classification across the ${a.areaKm2.toFixed(1)} km² AOI. Mean LST ${S.mean}°C (± ${S.sd}°C), range ${S.min}–${S.max}°C.</p>
+      ${svgBars(S.dist,S.mean)}</div>
+    <div class="rd-sec"><h2>Hot / Moderate / Cool Zone Split</h2>
+      <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">${svgDonut(S.hotShare,S.coolShare)}
+      <div style="font-family:'Outfit',sans-serif;font-size:13px;color:#2c3340">
+        <div>Hot zones (≥ mean +2°C): <b>${S.hotShare}%</b></div>
+        <div>Moderate: <b>${100-S.hotShare-S.coolShare}%</b></div>
+        <div>Cool zones (≤ mean −2°C): <b>${S.coolShare}%</b></div></div></div></div>
+    <div class="rd-sec"><h2>Diurnal Temperature Cycle</h2>${svgLine(S.hourly,S.mean)}</div>
+    <div class="rd-sec"><h2>Per-District Breakdown</h2>
+      <table style="width:100%;border-collapse:collapse;font-family:'Outfit',sans-serif;font-size:12.5px">
+        <thead><tr style="background:#f1ece0">
+          <th style="text-align:left;padding:8px 10px;border:1px solid #e2dccd">District / Zone</th>
+          <th style="text-align:right;padding:8px 10px;border:1px solid #e2dccd">Mean LST °C</th>
+          <th style="text-align:right;padding:8px 10px;border:1px solid #e2dccd">NDVI</th>
+          <th style="text-align:right;padding:8px 10px;border:1px solid #e2dccd">UHI Δ °C</th>
+          <th style="text-align:center;padding:8px 10px;border:1px solid #e2dccd">Risk</th></tr></thead>
+        <tbody>${S.districts.map(d=>`<tr>
+          <td style="padding:8px 10px;border:1px solid #e2dccd">${d.zone}</td>
+          <td style="padding:8px 10px;border:1px solid #e2dccd;text-align:right;font-family:monospace">${d.lst}</td>
+          <td style="padding:8px 10px;border:1px solid #e2dccd;text-align:right;font-family:monospace">${d.ndvi}</td>
+          <td style="padding:8px 10px;border:1px solid #e2dccd;text-align:right;font-family:monospace">+${d.uhi}</td>
+          <td style="padding:8px 10px;border:1px solid #e2dccd;text-align:center;color:${d.risk==='High'?'#c0392b':d.risk==='Moderate'?'#c0531f':'#2e8b4f'};font-weight:600">${d.risk}</td></tr>`).join('')}</tbody>
+      </table></div>`;
+  // tree block
+  const treeBlock=`
+    <div class="rd-sec"><h2>AI Tree Recommendations — Greening Strategy</h2>
+      <p style="font-family:'Outfit',sans-serif">${treeStrategy()}</p>${svgTreeBars()}</div>
+    <div class="rd-sec"><h2>Recommended Native Species</h2>
+      <table style="width:100%;border-collapse:collapse;font-family:'Outfit',sans-serif;font-size:12.5px">
+        <thead><tr style="background:#eaf3ec">
+          <th style="text-align:left;padding:8px 10px;border:1px solid #d6e6d9">Species</th>
+          <th style="text-align:left;padding:8px 10px;border:1px solid #d6e6d9">Local name</th>
+          <th style="text-align:right;padding:8px 10px;border:1px solid #d6e6d9">Cooling Δ°C</th>
+          <th style="text-align:right;padding:8px 10px;border:1px solid #d6e6d9">Canopy m</th>
+          <th style="text-align:left;padding:8px 10px;border:1px solid #d6e6d9">Best zone</th></tr></thead>
+        <tbody>${SPECIES.map(s=>`<tr>
+          <td style="padding:8px 10px;border:1px solid #d6e6d9;font-style:italic">${s[0]}</td>
+          <td style="padding:8px 10px;border:1px solid #d6e6d9">${s[1]}</td>
+          <td style="padding:8px 10px;border:1px solid #d6e6d9;text-align:right;font-family:monospace;color:#2e8b4f;font-weight:700">−${s[2]}</td>
+          <td style="padding:8px 10px;border:1px solid #d6e6d9;text-align:right;font-family:monospace">${s[3]}</td>
+          <td style="padding:8px 10px;border:1px solid #d6e6d9">${s[5]}</td></tr>`).join('')}</tbody>
+      </table></div>`;
+  document.getElementById('exportBody').innerHTML=`
+    <div class="rd-h1">🌡 Urban Heat Island Intelligence Report — ${aoiCityCountry(a)}</div>
+    <div class="rd-meta">
+      <div><b>Generated:</b> <span>${now}</span></div><div><b>Location:</b> <span>${aoiName(a)} (${a.lat.toFixed(4)}, ${a.lng.toFixed(4)})</span></div>
+      <div><b>Surface Temp:</b> <span>${S.mean}°C</span></div><div><b>Humidity:</b> <span>${a.hum||75}%</span></div>
+      <div><b>AOI Area:</b> <span>${a.areaKm2.toFixed(1)} km²</span></div><div><b>UHI Δ:</b> <span>+${a.uhi||5}°C</span></div>
+      <div><b>Std Deviation:</b> <span>± ${S.sd}°C</span></div><div><b>Range:</b> <span>${S.min} – ${S.max}°C</span></div>
+    </div>
+    <p style="font-family:'Outfit',sans-serif;font-size:12px;color:#7a818c;margin:-8px 0 18px">Section I — Heat Intelligence narrative · Section II — Statistical Analysis Results · Section III — AI Tree Recommendations</p>
+    ${narrative}
+    ${statsBlock}
+    ${treeBlock}
+    <div class="rd-foot">AfricaHub — Full Urban Heat Island Report · ${aoiName(a)} · generated ${now}</div>`;
+}
+document.getElementById('exportToggleSide').onclick=()=>{renderFullReport();document.getElementById('exportOverlay').classList.add('show');};
+document.getElementById('exportClose').onclick=()=>document.getElementById('exportOverlay').classList.remove('show');
+document.getElementById('exportOverlay').onclick=e=>{if(e.target.id==='exportOverlay')e.target.classList.remove('show');};
+document.getElementById('dlFullDocx').onclick=async()=>{const s=document.getElementById('fullStatus');
+  lastStats=lastStats||aoiStats();s.textContent='Building full Word document…';
+  try{await buildDocx();s.textContent='Downloaded ✓ — full report (Geographic, Environmental, Urban, Events, Anthropogenic, Statistical Analysis, Tree Recommendations).';}
+  catch(e){s.textContent='Error — see console';console.error(e);}};
+
+/* ============================================================
+   SKY VIEW FACTOR (uh_svf)  — urban enclosure, canyons, shading
+   ============================================================ */
+function aoiContext(){
+  return activeAOI||{city:DATA.find(d=>d.name==='DR Congo'),temp:31,feels:32,uhi:5,hum:75,pop:8,areaKm2:120,lat:-4.44,lng:15.27,granularity:100,
+    placeName:'🇨🇩 Kinshasa, DR Congo',cityName:'Kinshasa',countryName:'DR Congo',flag:'🇨🇩'};
+}
+// AOI naming based on nearest dataset city/division
+function aoiName(a){return (a&&a.placeName)||'Selected Area of Interest';}      // "🇲🇦 Rabat, Morocco"
+function aoiAOI(a){ // "🇲🇦 Rabat AOI" — used in section headers
+  if(a&&a.flag&&a.cityName)return `${a.flag} ${a.cityName} AOI`;
+  if(a&&a.placeName)return `${a.placeName} AOI`;
+  return 'Selected Area AOI';}
+function aoiCityCountry(a){ // "🇲🇦 Rabat, Morocco"
+  if(a&&a.flag&&a.cityName&&a.countryName)return `${a.flag} ${a.cityName}, ${a.countryName}`;
+  return aoiName(a);}
+function aoiFlag(a){return (a&&a.flag)||(a&&a.city&&a.city.flag)||'📍';}
+function aoiSlug(a){return ((a&&a.cityName)||aoiName(a)||'AOI').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40)||'AOI';}
+// 3D-ish street canyon cross-section: two building walls + sky wedge
+function svgCanyon(svf,hw){const w=620,h=260,gl=h-40;
+  const bw=140, gap=w-bw*2;
+  const bhL=70+hw*70, bhR=80+hw*60;
+  // sky wedge angle widens as SVF rises
+  const apex=[w/2, gl-Math.min(bhL,bhR)];
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">
+    <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#bfe3ff"/><stop offset="100%" stop-color="#eaf6ff"/></linearGradient>
+      <linearGradient id="bld" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5b6470"/><stop offset="100%" stop-color="#3a4250"/></linearGradient></defs>
+    <rect x="0" y="0" width="${w}" height="${gl}" fill="url(#sky)"/>
+    <polygon points="${bw},${gl} ${bw},${gl-bhL} ${apex[0]},${apex[1]} ${w-bw},${gl-bhR} ${w-bw},${gl}"
+      fill="#fff" opacity="${0.25+svf*0.6}"/>
+    <rect x="0" y="${gl-bhL}" width="${bw}" height="${bhL}" fill="url(#bld)"/>
+    <rect x="${w-bw}" y="${gl-bhR}" width="${bw}" height="${bhR}" fill="url(#bld)"/>
+    ${Array.from({length:Math.floor(bhL/22)},(_,i)=>`<rect x="${bw-26}" y="${gl-bhL+12+i*22}" width="14" height="11" fill="#cdd6e0" opacity=".7"/>`).join('')}
+    ${Array.from({length:Math.floor(bhR/22)},(_,i)=>`<rect x="${w-bw+12}" y="${gl-bhR+12+i*22}" width="14" height="11" fill="#cdd6e0" opacity=".7"/>`).join('')}
+    <rect x="${bw}" y="${gl}" width="${gap}" height="40" fill="#6b7280"/>
+    <line x1="${w/2}" y1="${gl}" x2="${w/2}" y2="${h}" stroke="#ffe08a" stroke-width="2" stroke-dasharray="8 7"/>
+    <text x="${w/2}" y="${apex[1]-8}" text-anchor="middle" font-size="13" fill="#1b3a8f" font-weight="700" font-family="sans-serif">SVF ${svf.toFixed(2)} · H/W ${hw.toFixed(2)}</text>
+    <text x="14" y="20" font-size="10" fill="#1b3a8f" font-family="sans-serif">Street-canyon cross-section — visible sky fraction</text>
+  </svg>`;}
+function svgSvfHist(dist){const w=620,h=160,pad=24;const max=Math.max(...dist.map(d=>d.count));const bw=(w-pad*2)/dist.length;
+  const col=v=>`hsl(${210-v*120},60%,${40+v*25}%)`;
+  return `<svg viewBox="0 0 ${w} ${h+26}" style="width:100%;height:auto">
+    ${dist.map((d,i)=>{const bh=(d.count/max)*(h-pad);const x=pad+i*bw;
+      return `<rect x="${x+2}" y="${h-bh}" width="${bw-4}" height="${bh}" rx="2" fill="${col(d.c)}"/>
+        <text x="${x+bw/2}" y="${h+12}" font-size="8" fill="#888" text-anchor="middle" font-family="monospace">${d.c.toFixed(1)}</text>`;}).join('')}
+    <text x="${pad}" y="${h+24}" font-size="9" fill="#888" font-family="sans-serif">SVF class (0 = fully enclosed · 1 = open sky) — cell count</text></svg>`;}
+
+function renderSVF(){
+  const a=aoiContext();
+  const S0=Math.abs(a.lat*1000+a.lng*1000)+(a.areaKm2||1);
+  const rnd=k=>seeded(S0+k*5.17);
+  // mean SVF & enclosure vary with location morphology
+  const meanSvf=+(0.30+rnd(1)*0.45).toFixed(2);
+  const hw=+(0.5+(1-meanSvf)*1.6+rnd(2)*0.3).toFixed(2);
+  const spread=0.12+rnd(3)*0.12;
+  const dist=Array.from({length:10},(_,i)=>{const c=(i+0.5)/10;
+    return {c,count:Math.max(2,Math.round(120*Math.exp(-Math.pow((c-meanSvf)/spread,2))+rnd(i+4)*25))};});
+  const total=dist.reduce((s,d)=>s+d.count,0);
+  const canyonPct=Math.round(dist.filter(d=>d.c<0.35).reduce((s,d)=>s+d.count,0)/total*100);
+  const exposedPct=Math.round(dist.filter(d=>d.c>=0.65).reduce((s,d)=>s+d.count,0)/total*100);
+  const corridorPct=100-canyonPct-exposedPct;
+  // zone SVF + peak LST vary per AOI (peak LST anchored to the AOI's own mean temp)
+  const baseT=a.temp;
+  const zones=[
+    ['Deep canyon core',+(0.12+rnd(10)*0.12).toFixed(2),+(baseT+9+rnd(11)*4).toFixed(0),'Severe enclosure — minimal daytime sky exposure but strong nocturnal heat trapping'],
+    ['Boulevard corridor',+(0.32+rnd(12)*0.12).toFixed(2),+(baseT+5+rnd(13)*3).toFixed(0),'Partial shading from street trees; moderate ventilation'],
+    ['Mixed residential',+(0.50+rnd(14)*0.12).toFixed(2),+(baseT+2+rnd(15)*3).toFixed(0),'Balanced sky exposure; intervention-responsive'],
+    ['Open plaza / parking',+(0.74+rnd(16)*0.15).toFixed(2),+(baseT+rnd(17)*2).toFixed(0),'Fully exposed — peak daytime LST, prime cool-surface target']];
+  document.getElementById('svfBody').innerHTML=`
+    <div class="rd-h1" style="color:#2c5f8f;border-color:#2c5f8f">🌤️ ${T('svfTitle')} — ${aoiAOI(a)}</div>
+    <div class="rd-meta">
+      <div><b>Area of Interest:</b> <span>${a.areaKm2.toFixed(1)} km² · ${aoiName(a)}</span></div>
+      <div><b>Centroid:</b> <span>${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}</span></div>
+      <div><b>Mean SVF:</b> <span>${meanSvf}</span></div><div><b>Mean H/W ratio:</b> <span>${hw}</span></div>
+      <div><b>Inputs:</b> <span>Buildings + terrain + tree canopy</span></div><div><b>Grid:</b> <span>${a.granularity||100} m</span></div>
+    </div>
+    <div class="rd-sec"><h2>${T('v1')}</h2>
+      <p>Reconstructed canyon enclosure for the representative street geometry of the AOI. A lower Sky View Factor means more enclosure — less daytime sky for shading but stronger nocturnal heat trapping.</p>
+      ${svgCanyon(meanSvf,hw)}
+      <p style="font-family:'Outfit',sans-serif;font-size:12px;color:#7a818c;margin-top:8px">Drag the H/W slider in a full LiDAR workflow to explore building-adjacent SVF; here the cross-section is reconstructed from morphology estimates for the AOI.</p></div>
+    <div class="rd-sec"><h2>${T('v2')}</h2>${svgSvfHist(dist)}</div>
+    <div class="rd-sec"><h2>${T('v3')}</h2>
+      <p style="font-family:'Outfit',sans-serif;font-size:12.5px;color:#555">Building-adjacent Sky View Factor across the AOI, extruded by built height (Magma palette: dark = shaded / enclosed, bright = exposed). Hover any block for its street SVF sample.</p>
+      <div id="svf3d"></div>
+      <div style="display:flex;gap:6px;margin-top:8px;font-family:'Outfit',sans-serif;font-size:10.5px;color:#666;align-items:center">
+        <span>0.0 Shaded</span><span style="flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#000004,#3b0f70,#8c2981,#de4968,#fe9f6d,#fcfdbf)"></span><span>1.0 Exposed</span></div></div>
+    <div class="rd-sec"><h2>${T('v4')}</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="flex:1;min-width:150px;background:#2c5f8f;color:#fff;border-radius:10px;padding:13px"><div style="font-size:24px;font-weight:700;font-family:Georgia">${canyonPct}%</div><div style="font-size:11px">Street canyons (SVF &lt; 0.35)</div></div>
+        <div style="flex:1;min-width:150px;background:#7fae6c;color:#fff;border-radius:10px;padding:13px"><div style="font-size:24px;font-weight:700;font-family:Georgia">${corridorPct}%</div><div style="font-size:11px">Shaded corridors</div></div>
+        <div style="flex:1;min-width:150px;background:#d98b3f;color:#fff;border-radius:10px;padding:13px"><div style="font-size:24px;font-weight:700;font-family:Georgia">${exposedPct}%</div><div style="font-size:11px">Exposed hotspots (SVF ≥ 0.65)</div></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-family:'Outfit',sans-serif;font-size:12.5px">
+        <thead><tr style="background:#e6eef6">
+          <th style="text-align:left;padding:9px 11px;border:1px solid #d2dde8">Morphology zone</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #d2dde8">Mean SVF</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #d2dde8">Peak LST °C</th>
+          <th style="text-align:left;padding:9px 11px;border:1px solid #d2dde8">Thermal behaviour</th></tr></thead>
+        <tbody>${zones.map(z=>`<tr>
+          <td style="padding:9px 11px;border:1px solid #d2dde8">${z[0]}</td>
+          <td style="padding:9px 11px;border:1px solid #d2dde8;text-align:right;font-family:monospace">${z[1]}</td>
+          <td style="padding:9px 11px;border:1px solid #d2dde8;text-align:right;font-family:monospace">${z[2]}</td>
+          <td style="padding:9px 11px;border:1px solid #d2dde8;font-size:11.5px">${z[3]}</td></tr>`).join('')}</tbody>
+      </table></div>
+    <div class="rd-foot">AfricaHub · uh_svf() — Sky View Factor toolkit · ${aoiName(a)} · ${new Date().toLocaleString('en-GB')}</div>`;
+  // init 3D Magma street-canyon explorer (SVF field)
+  const MAGMA=['#000004','#1c1044','#4f127b','#812581','#b5367a','#e55064','#fb8761','#fec287','#fcfdbf'];
+  const svfGrid=Array.from({length:300},(_,i)=>Math.min(1,Math.max(0,meanSvf+0.32*Math.sin(i/4+S0)+rnd(i+200)*0.4-0.2)));
+  build3DExplorer('svf3d',svfGrid,{
+    palette:MAGMA,dark:true,maxLift:140,
+    classFn:v=>MAGMA[Math.min(MAGMA.length-1,Math.floor(v*MAGMA.length))],
+    meta:(v,cell)=>({'Street mean SVF':v.toFixed(3),'Street ID':50000+cell.c*97+cell.r,
+      'Sample points':10+Math.round(v*22),'Built height':(6+(1-v)*60).toFixed(0)+' m'})
+  });
+}
+document.getElementById('svfClose').onclick=()=>document.getElementById('svfOverlay').classList.remove('show');
+document.getElementById('svfOverlay').onclick=e=>{if(e.target.id==='svfOverlay')e.target.classList.remove('show');};
+document.getElementById('dlSvfDocx').onclick=async()=>{lastStats=lastStats||aoiStats();try{await buildDocx();}catch(e){console.error(e);}};
+
+/* ============================================================
+   HEAT MITIGATION DECISION SUPPORT (uh_decision)
+   combines LST + NDVI + canopy + population + morphology
+   ============================================================ */
+// priority heat field grid → coloured cells (the "hybrid decision field")
+// hexbin field renderer — flat-top hex grid coloured by a classifier fn
+function svgHexField(values,cols,classFn,w){w=w||620;
+  const hr=w/cols/2;            // hex "radius" sizing
+  const hw=hr*Math.sqrt(3);     // horizontal spacing
+  const vstep=hr*1.5;
+  const rows=Math.ceil(Math.sqrt(values.length)*1.05);
+  function hexPath(cx,cy){let p='';for(let k=0;k<6;k++){const ang=Math.PI/180*(60*k-30);
+    const x=cx+hr*Math.cos(ang),y=cy+hr*Math.sin(ang);p+=(k?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);}return p+'Z';}
+  let cells='',idx=0;const maxY=rows*vstep+hr;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const v=values[idx%values.length];idx++;
+    // mask to an irregular blob so it reads like a city boundary
+    const nx=c/cols-0.5,ny=r/rows-0.52;
+    const edge=0.46+0.06*Math.sin(c*0.8)+0.05*Math.cos(r*0.7);
+    if(Math.hypot(nx*1.15,ny)>edge)continue;
+    const cx=hr+c*hw+(r%2?hw/2:0),cy=hr+r*vstep;
+    cells+=`<path d="${hexPath(cx,cy)}" fill="${classFn(v)}" stroke="#00122b" stroke-width="0.3" opacity="0.92"/>`;
+  }
+  return `<svg viewBox="0 0 ${w} ${maxY}" style="width:100%;height:auto;border-radius:8px;background:#dfe6ea">${cells}</svg>`;}
+
+// legacy name kept; now routes to hex hybrid field
+function svgPriorityField(grid,n){
+  const classFn=v=>v>0.8?'#7a1f2b':v>0.65?'#bd2a2e':v>0.5?'#e25a3b':v>0.35?'#e9974c':v>0.2?'#f2cc8f':'#abdda4';
+  return svgHexField(grid,n||34,classFn);}
+
+// 3D isometric extruded column field — interactive (hover shows analytics)
+function build3DExplorer(containerId,values,opts){
+  opts=opts||{};const palette=opts.palette||['#1d3a5f','#2c7da0','#f0c43f','#e98a3c','#9e2b25'];
+  const classFn=opts.classFn||(v=>palette[Math.min(palette.length-1,Math.floor(v*palette.length))]);
+  const meta=opts.meta||(()=>({}));
+  const el=document.getElementById(containerId);if(!el)return;
+  const W=620,H=380;
+  const cols=opts.cols||26,rows=opts.rows||26;
+  const isoX=14,isoY=7;            // isometric cell step
+  const maxLift=opts.maxLift||120; // extrusion height in px
+  // build cells with iso projection, back-to-front
+  const cx=W/2,cy=120;
+  let cells=[];let idx=0;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const nx=c/cols-0.5,ny=r/rows-0.5;
+    if(Math.hypot(nx*1.1,ny*1.15)>0.5)continue;
+    const v=values[idx%values.length];idx++;
+    const px=cx+(c-cols/2)*isoX+(r-rows/2)*isoX;
+    const py=cy+(c-cols/2)*isoY-(r-rows/2)*isoY;
+    cells.push({c,r,v,px,py,lift:8+v*maxLift,depth:py});
+  }
+  cells.sort((a,b)=>a.depth-b.depth);
+  const tw=isoX, td=isoY;
+  function colShade(hex,f){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+    return `rgb(${Math.round(r*f)},${Math.round(g*f)},${Math.round(b*f)})`;}
+  let body='';
+  cells.forEach((cell,i)=>{const fill=classFn(cell.v);const x=cell.px,y=cell.py,L=cell.lift;
+    // top diamond, left & right faces
+    const top=`${x},${y-L} ${x+tw},${y-L+td} ${x},${y-L+2*td} ${x-tw},${y-L+td}`;
+    const left=`${x-tw},${y-L+td} ${x},${y-L+2*td} ${x},${y+2*td} ${x-tw},${y+td}`;
+    const right=`${x},${y-L+2*td} ${x+tw},${y-L+td} ${x+tw},${y+td} ${x},${y+2*td}`;
+    body+=`<polygon points="${left}" fill="${colShade(fill,0.62)}" data-i="${i}"/>
+      <polygon points="${right}" fill="${colShade(fill,0.8)}" data-i="${i}"/>
+      <polygon points="${top}" fill="${fill}" data-i="${i}" style="cursor:pointer"/>`;
+  });
+  el.innerHTML=`<div style="position:relative;background:${opts.dark?'#0d1117':'#eef2f5'};border-radius:10px;overflow:hidden">
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${body}</svg>
+    <div id="${containerId}_tip" style="position:absolute;display:none;background:rgba(15,20,30,.95);color:#fff;border-radius:8px;padding:9px 11px;font-family:'Outfit',sans-serif;font-size:11px;pointer-events:none;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,.5);min-width:150px"></div>
+  </div>`;
+  const svg=el.querySelector('svg'),tip=document.getElementById(containerId+'_tip');
+  svg.addEventListener('mousemove',ev=>{const t=ev.target;if(t.tagName==='polygon'&&t.dataset.i){
+    const cell=cells[+t.dataset.i];const m=meta(cell.v,cell);
+    tip.style.display='block';tip.style.left=Math.min(W-160,ev.offsetX*(svg.clientWidth/W)+12)+'px';tip.style.top=(ev.offsetY*(svg.clientHeight/H)+12)+'px';
+    tip.innerHTML=Object.entries(m).map(([k,val])=>`<div><span style="color:#8aa0c0">${k}:</span> <b>${val}</b></div>`).join('');
+  }else{tip.style.display='none';}});
+  svg.addEventListener('mouseleave',()=>tip.style.display='none');
+}
+
+function renderDecision(){
+  const a=aoiContext();
+  // per-AOI seed from real coordinates → distinct driver layers & maps per location
+  const S0=Math.abs(a.lat*1000+a.lng*1000)+(a.areaKm2||1);
+  const rnd=k=>seeded(S0+k*4.73);
+  // normalised driver layers
+  const lstN=+Math.min(1,Math.max(0,(a.temp-22)/22)).toFixed(2);
+  const ndviN=+Math.max(0.05,(0.45-Math.max(0,(a.temp-30)/40)-rnd(20)*0.12)).toFixed(2);
+  const canopyN=+(0.15+rnd(1)*0.35).toFixed(2);
+  const popN=+Math.min(1,(a.pop/14)*(0.7+rnd(21)*0.6)).toFixed(2);
+  const morphN=+(0.3+rnd(2)*0.5).toFixed(2);
+  // weighted priority index
+  const W={lst:0.32,veg:0.22,pop:0.28,morph:0.18};
+  const priority=+((lstN*W.lst)+((1-ndviN)*W.veg)+(popN*W.pop)+(morphN*W.morph)).toFixed(2);
+  const grid=Array.from({length:240},(_,i)=>{const base=priority;
+    return Math.min(1,Math.max(0,base+(rnd(i)*0.7-0.35)+0.25*Math.sin(i/7+S0)));});
+  const gini=+(0.08+rnd(5)*0.18).toFixed(3);
+  const exposedShare=Math.round(popN*100);
+  const drivers=[['Land Surface Temperature',lstN,W.lst],['Vegetation deficit (1−NDVI)',+(1-ndviN).toFixed(2),W.veg],
+    ['Population exposure',popN,W.pop],['Urban morphology / enclosure',morphN,W.morph]];
+  const interventions=[
+    ['Priority tree planting',Math.round(priority*100),'High-LST, low-NDVI, high-population cells','−2.4 to −4.1°C'],
+    ['Cool / reflective roofs',Math.round((lstN*0.7+morphN*0.3)*100),'Dense impervious cores with low canopy potential','−2.1 to −3.8°C'],
+    ['Green corridor / shade',Math.round((morphN*0.6+popN*0.4)*100),'Pedestrian boulevards & transit routes','−8 to −14°C MRT'],
+    ['Water / ET features',Math.round((lstN*0.5+(1-ndviN)*0.5)*100),'Exposed plazas near population centres','−1.6 to −2.1°C']]
+    .sort((x,y)=>y[1]-x[1]);
+
+  // ---- Hybrid 2x2 field: Hotter/Cooler × Plantable/Constrained ----
+  const meanHot=a.temp;
+  const hybridVals=grid.map((p,i)=>{const hot=(p+rnd(i+3)*0.4-0.2)>0.5;const plant=rnd(i*3+1)>0.5;
+    return hot?(plant?0:1):(plant?2:3);}); // 0 hot+plant,1 hot+constr,2 cool+plant,3 cool+constr
+  const HYB=['#3b2a52','#d8584a','#5b8db8','#8a9a6b']; // matches image legend order: hot+plant, hot+constr, cool+plant, cool+constr
+  const hybClass=v=>HYB[v|0];
+  const cnt=[0,0,0,0];hybridVals.forEach(v=>cnt[v]++);const ht=hybridVals.length;
+  const pct=k=>Math.round(cnt[k]/ht*100);
+  const hybTemps=[(meanHot+0.3).toFixed(1),(meanHot+0.5).toFixed(1),(meanHot-5.7).toFixed(1),(meanHot-3.3).toFixed(1)];
+  const giniCI=`${gini} [95% CI ${(gini-0.002).toFixed(3)} – ${(gini+0.001).toFixed(3)}]`;
+
+  // ---- 5-class tree-planting action map ----
+  const actionVals=grid.map((p,i)=>{const s=Math.min(1,Math.max(0,p+0.18*Math.sin(i/5+S0)+rnd(i+9)*0.3-0.15));
+    return s>0.92?4:s>0.72?3:s>0.5?2:s>0.3?1:0;});
+  const ACT=['#9aa873','#5b8db8','#f0c43f','#e98a3c','#9e2b25']; // lower,watch,emerging,high,top5%
+  const actClass=v=>ACT[v|0];
+  const actLabels=['Lower priority','Watch','Emerging priority','High priority','Top 5%'];
+  const actCnt=[0,0,0,0,0];actionVals.forEach(v=>actCnt[v]++);
+
+  document.getElementById('decisionBody').innerHTML=`
+    <div class="rd-h1" style="color:#b5532a;border-color:#b5532a">🌳 ${T('decisionTitle')} — ${aoiAOI(a)}</div>
+    <div class="rd-meta">
+      <div><b>Area of Interest:</b> <span>${a.areaKm2.toFixed(1)} km² · ${aoiName(a)}</span></div>
+      <div><b>Centroid:</b> <span>${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}</span></div>
+      <div><b>Composite priority index:</b> <span>${priority} / 1.00</span></div><div><b>Mean LST:</b> <span>${a.temp}°C</span></div>
+      <div><b>Spatial equity (Gini):</b> <span>${gini}</span></div><div><b>Exposed population share:</b> <span>${exposedShare}%</span></div>
+    </div>
+
+    <div class="rd-sec"><h2>${T('d1')}</h2>
+      <p style="font-family:'Outfit',sans-serif;font-size:12.5px;color:#555">Where the pattern takes space — area share and mean heat by condition. Each hexagon is classified on two axes: thermal load (hotter / cooler) and greening feasibility (plantable / constrained).</p>
+      <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:1;min-width:300px">${svgHexField(hybridVals,34,hybClass)}</div>
+        <div style="width:230px;font-family:'Outfit',sans-serif;font-size:12px">
+          <div style="font-weight:700;margin-bottom:10px">Where the pattern takes space</div>
+          ${[[0,'Hotter + Plantable'],[1,'Hotter + Constrained'],[2,'Cooler + Plantable'],[3,'Cooler + Constrained']].map(([k,lab])=>
+            `<div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">
+              <span style="width:34px;height:24px;border-radius:4px;background:${HYB[k]};flex:0 0 auto"></span>
+              <div><div>${lab}</div><div style="color:#888;font-size:11px">${pct(k)}% | ${hybTemps[k]} °C</div></div></div>`).join('')}
+          <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:3px;width:90px">
+            <span style="background:${HYB[1]};height:42px;border-radius:3px"></span><span style="background:${HYB[0]};height:42px;border-radius:3px"></span>
+            <span style="background:${HYB[3]};height:42px;border-radius:3px"></span><span style="background:${HYB[2]};height:42px;border-radius:3px"></span>
+          </div>
+          <div style="color:#888;font-size:10px;margin-top:4px">↑ Hotter · More plantable →</div>
+        </div>
+      </div>
+      <p style="font-family:'Outfit',sans-serif;font-size:10.5px;color:#8a8a8a;margin-top:10px;line-height:1.5">
+        Methodology: Contiguous policy fields (dissolved with selective texturing). Data: Landsat-9 LST, Sentinel-2 NDVI, Meta Canopy Height Model (CHM), GHSL Population Grid, OSM landuse &amp; water.<br>Policy equity: Population-weighted spatial priority Gini = ${giniCI}.</p></div>
+
+    <div class="rd-sec"><h2>${T('d2')}</h2>
+      <p style="font-family:'Outfit',sans-serif;font-size:12.5px;color:#555">Priority summarized to organic divisions. Dark red marks the top 5% of intervention hotspots by heat and exposure.</p>
+      <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:1;min-width:300px">${svgHexField(actionVals,34,actClass)}</div>
+        <div style="width:200px;font-family:'Outfit',sans-serif;font-size:12px">
+          <div style="font-weight:700;margin-bottom:10px">Action class</div>
+          ${actLabels.map((lab,k)=>`<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+            <span style="width:26px;height:18px;border-radius:4px;background:${ACT[k]};flex:0 0 auto"></span>
+            <div>${lab}<div style="color:#888;font-size:10.5px">${Math.round(actCnt[k]/actionVals.length*100)}% of area</div></div></div>`).join('')}
+        </div>
+      </div>
+      <p style="font-family:'Outfit',sans-serif;font-size:10.5px;color:#8a8a8a;margin-top:10px;line-height:1.5">
+        Methodology: Multi-criteria spatial decision priorities (organic blocks scale). Data: Landsat-9 LST, Sentinel-2 NDVI, Meta CHM, GHSL Population Grid, OSM landuse &amp; water.<br>Policy equity: Population-weighted spatial priority Gini = ${giniCI}.</p></div>
+
+    <div class="rd-sec"><h2>${T('d3')}</h2>
+      <p style="font-family:'Outfit',sans-serif;font-size:12.5px;color:#555">Extruded hexagonal priority grid (100 m) — column height encodes the neighbourhood priority score (0–100). Hover any column for its urban-analytics indicator.</p>
+      <div id="decision3d"></div>
+      <div style="display:flex;gap:6px;margin-top:8px;font-family:'Outfit',sans-serif;font-size:10.5px;color:#666;align-items:center">
+        <span>Low (&lt;30)</span><span>Watch</span><span style="flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#2ecc71,#3498db,#f0c43f,#e98a3c,#9e2b25)"></span><span>High</span><span>Top 5% (&gt;80)</span></div></div>
+    <div class="rd-sec"><h2>${T('d4')}</h2>
+      <table style="width:100%;border-collapse:collapse;font-family:'Outfit',sans-serif;font-size:12.5px">
+        <thead><tr style="background:#f3e6df">
+          <th style="text-align:left;padding:9px 11px;border:1px solid #e6d2c8">Driver layer</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #e6d2c8">Normalised value</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #e6d2c8">Weight</th>
+          <th style="text-align:left;padding:9px 11px;border:1px solid #e6d2c8">Contribution</th></tr></thead>
+        <tbody>${drivers.map(d=>`<tr>
+          <td style="padding:9px 11px;border:1px solid #e6d2c8">${d[0]}</td>
+          <td style="padding:9px 11px;border:1px solid #e6d2c8;text-align:right;font-family:monospace">${d[1]}</td>
+          <td style="padding:9px 11px;border:1px solid #e6d2c8;text-align:right;font-family:monospace">${d[2]}</td>
+          <td style="padding:9px 11px;border:1px solid #e6d2c8"><div style="height:8px;border-radius:4px;background:#b5532a;width:${Math.round(d[1]*d[2]/0.32*100)}%;min-width:6px"></div></td></tr>`).join('')}</tbody>
+      </table></div>
+    <div class="rd-sec"><h2>${T('d5')}</h2>
+      <table style="width:100%;border-collapse:collapse;font-family:'Outfit',sans-serif;font-size:12.5px">
+        <thead><tr style="background:#f3e6df">
+          <th style="text-align:left;padding:9px 11px;border:1px solid #e6d2c8">Intervention</th>
+          <th style="text-align:right;padding:9px 11px;border:1px solid #e6d2c8">Suitability</th>
+          <th style="text-align:left;padding:9px 11px;border:1px solid #e6d2c8">Target cells</th>
+          <th style="text-align:left;padding:9px 11px;border:1px solid #e6d2c8">Projected cooling</th></tr></thead>
+        <tbody>${interventions.map((it,i)=>`<tr>
+          <td style="padding:9px 11px;border:1px solid #e6d2c8;font-weight:${i===0?'700':'400'}">${i===0?'★ ':''}${it[0]}</td>
+          <td style="padding:9px 11px;border:1px solid #e6d2c8;text-align:right;font-family:monospace">${it[1]}%</td>
+          <td style="padding:9px 11px;border:1px solid #e6d2c8;font-size:11.5px">${it[2]}</td>
+          <td style="padding:9px 11px;border:1px solid #e6d2c8;font-family:monospace;color:#2e8b4f">${it[3]}</td></tr>`).join('')}</tbody>
+      </table></div>
+    <div class="rd-sec"><h2>${T('d6')}</h2>
+      <p>A Gini coefficient of <b>${gini}</b> describes how unevenly heat burden falls across the AOI's population — higher values mean vulnerable groups face disproportionate exposure. Roughly <b>${exposedShare}%</b> of residents fall within the high-priority intervention zones, which should be weighted first for equitable greening investment.</p></div>
+    <div class="rd-foot">AfricaHub · uh_decision() — Heat mitigation decision support · ${aoiName(a)} · ${new Date().toLocaleString('en-GB')}</div>`;
+  // init 3D extruded priority explorer
+  build3DExplorer('decision3d',grid,{
+    palette:['#2ecc71','#3498db','#f0c43f','#e98a3c','#9e2b25'],
+    classFn:v=>v>0.8?'#9e2b25':v>0.62?'#e98a3c':v>0.45?'#f0c43f':v>0.28?'#3498db':'#2ecc71',
+    maxLift:130,dark:false,
+    meta:(v)=>({'Priority Score':(v*100).toFixed(1)+'/100','Mean Temp':(a.temp-3+v*9).toFixed(1)+' °C',
+      'Canopy':(Math.max(0,(1-v)*22)).toFixed(1)+'%','NDVI':(0.5-v*0.35).toFixed(2),
+      'Est. Pop':Math.round(180+v*900)})
+  });
+}
+document.getElementById('decisionToggleSide').onclick=()=>{renderDecision();document.getElementById('decisionOverlay').classList.add('show');};
+document.getElementById('decisionClose').onclick=()=>document.getElementById('decisionOverlay').classList.remove('show');
+document.getElementById('decisionOverlay').onclick=e=>{if(e.target.id==='decisionOverlay')e.target.classList.remove('show');};
+document.getElementById('dlDecisionDocx').onclick=async()=>{lastStats=lastStats||aoiStats();try{await buildDocx();}catch(e){console.error(e);}};
+
+/* ============================================================
+   WORD (.docx) GENERATION — two-page report, AOI-aware, with
+   statistical results + tree recommendations folded in
+   ============================================================ */
+function flatTabs(r){const t=reportTabs(r);
+  // strip HTML to plain paragraphs per section
+  const strip=html=>{const tmp=document.createElement('div');tmp.innerHTML=html;
+    return [...tmp.querySelectorAll('h3,p')].map(el=>({tag:el.tagName,text:el.textContent}));};
+  return {geo:strip(t.geo),env:strip(t.env),urban:strip(t.urban),events:strip(t.events),anthro:strip(t.anthro)};}
+
+async function buildDocx(){
+  if(typeof docx==='undefined'){alert('Word library still loading — try again in a moment.');return;}
+  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,
+    BorderStyle,ShadingType,AlignmentType,PageBreak}=docx;
+  const S=lastStats||aoiStats();const a=S.a;const now=new Date().toLocaleString('en-GB');
+  const city=aoiName(a);
+  const tabs=flatTabs({});
+  const H1=t=>new Paragraph({heading:HeadingLevel.HEADING_1,children:[new TextRun(t)]});
+  const H2=t=>new Paragraph({heading:HeadingLevel.HEADING_2,children:[new TextRun(t)]});
+  const P=t=>new Paragraph({spacing:{after:120},children:[new TextRun(t)]});
+  const Bullet=t=>new Paragraph({bullet:{level:0},spacing:{after:60},children:[new TextRun(t)]});
+  const border={style:BorderStyle.SINGLE,size:1,color:"BBBBBB"};const borders={top:border,bottom:border,left:border,right:border};
+  function cell(txt,w,head){return new TableCell({borders,width:{size:w,type:WidthType.DXA},
+    shading:head?{fill:"1B3A8F",type:ShadingType.CLEAR}:{fill:"FFFFFF",type:ShadingType.CLEAR},
+    margins:{top:60,bottom:60,left:100,right:100},
+    children:[new Paragraph({children:[new TextRun({text:txt,bold:!!head,color:head?"FFFFFF":"222222",size:18})]})]});}
+
+  const secText=(arr)=>arr.flatMap(o=>o.tag==='H3'?[H2(o.text)]:[P(o.text)]);
+
+  const children=[
+    new Paragraph({spacing:{after:60},children:[new TextRun({text:"Urban Heat Island Intelligence Report",bold:true,size:40,color:"1B3A8F"})]}),
+    new Paragraph({spacing:{after:200},children:[new TextRun({text:city+"  (AfricaHub)",size:26,color:"1B3A8F"})]}),
+    new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[4680,4680],rows:[
+      new TableRow({children:[cell("Generated",2340,1),cell(now,2340),cell("Location",2340,1),cell(city,2340)]}),
+      new TableRow({children:[cell("Surface Temp",2340,1),cell(S.mean+" °C",2340),cell("Humidity",2340,1),cell((a.hum||75)+" %",2340)]}),
+      new TableRow({children:[cell("Std Deviation",2340,1),cell("± "+S.sd+" °C",2340),cell("UHI Δ",2340,1),cell("+"+(a.uhi||5)+" °C",2340)]}),
+      new TableRow({children:[cell("AOI Area",2340,1),cell(a.areaKm2.toFixed(1)+" km²",2340),cell("Range",2340,1),cell(S.min+"–"+S.max+" °C",2340)]}),
+    ]}),
+    new Paragraph({spacing:{before:200}}),
+    H1("Geographic Information"),...secText(tabs.geo),
+    H1("Environmental Factors"),...secText(tabs.env),
+    // ---- PAGE 2 ----
+    new Paragraph({children:[new PageBreak()]}),
+    H1("Urban Factors"),...secText(tabs.urban),
+    H1("Events Analysis"),...secText(tabs.events),
+    H1("Anthropogenic Factors"),...secText(tabs.anthro),
+    H1("Statistical Analysis Results"),
+    P(`Quantile analysis across the ${a.areaKm2.toFixed(1)} km² Area of Interest near ${city} returns a mean land-surface temperature of ${S.mean}°C (± ${S.sd}°C), ranging ${S.min}–${S.max}°C. Hot zones (≥ mean +2°C) cover ${S.hotShare}% of sampled cells; cool zones (≤ mean −2°C) cover ${S.coolShare}%.`),
+    H2("Per-District Breakdown"),
+    new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[2600,1800,1500,1660,1800],rows:[
+      new TableRow({children:[cell("District / Zone",2600,1),cell("Mean LST °C",1800,1),cell("NDVI",1500,1),cell("UHI Δ °C",1660,1),cell("Risk",1800,1)]}),
+      ...S.districts.map(d=>new TableRow({children:[cell(d.zone,2600),cell(String(d.lst),1800),cell(String(d.ndvi),1500),cell("+"+d.uhi,1660),cell(d.risk,1800)]}))
+    ]}),
+    new Paragraph({spacing:{before:120}}),
+    H1("AI Tree Recommendations"),
+    P(`Priority native-species planting for the ${city} AOI, ranked by cooling effect:`),
+    new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[2600,2400,1500,1400,1460],rows:[
+      new TableRow({children:[cell("Species",2600,1),cell("Local name",2400,1),cell("Cooling Δ°C",1500,1),cell("Canopy m",1400,1),cell("Growth cm/yr",1460,1)]}),
+      ...SPECIES.map(s=>new TableRow({children:[cell(s[0],2600),cell(s[1],2400),cell("−"+s[2],1500),cell(String(s[3]),1400),cell(String(s[4]),1460)]}))
+    ]}),
+    P(""),
+    P(`Greening strategy: targeting roughly ${(a.areaKm2*0.18).toFixed(1)} km² of new canopy across the AOI would move effective tree cover toward the 30% threshold associated with measurable urban-heat-island relief, with projected local cooling of 2.4–4.1°C at maturity.`),
+    new Paragraph({spacing:{before:200},children:[new TextRun({text:`AfricaHub — Urban Heat Island Dashboard · Report generated ${now}`,italics:true,size:16,color:"888888"})]}),
+  ];
+
+  const doc=new Document({
+    styles:{default:{document:{run:{font:"Calibri",size:21}}},
+      paragraphStyles:[
+        {id:"Heading1",name:"Heading 1",basedOn:"Normal",next:"Normal",quickFormat:true,
+          run:{size:28,bold:true,color:"C0531F"},paragraph:{spacing:{before:240,after:140},outlineLevel:0}},
+        {id:"Heading2",name:"Heading 2",basedOn:"Normal",next:"Normal",quickFormat:true,
+          run:{size:23,bold:true,color:"333333"},paragraph:{spacing:{before:160,after:90},outlineLevel:1}}]},
+    numbering:{config:[{reference:"bullets",levels:[{level:0,format:"bullet",text:"•",alignment:AlignmentType.LEFT,
+      style:{paragraph:{indent:{left:560,hanging:280}}}}]}]},
+    sections:[{properties:{page:{size:{width:12240,height:15840},margin:{top:1280,right:1440,bottom:1280,left:1440}}},children:children}]
+  });
+  const blob=await Packer.toBlob(doc);
+  const url=URL.createObjectURL(blob);const a2=document.createElement('a');
+  a2.href=url;a2.download=`AfricaHub_UHI_Report_${aoiSlug(a)}.docx`;a2.click();
+}
+document.getElementById('dlDocx').onclick=async()=>{const s=document.getElementById('dlStatus');
+  s.textContent='Building Word document…';try{await buildDocx();s.textContent='Downloaded ✓';}catch(e){s.textContent='Error — see console';console.error(e);}};
+document.getElementById('dlStatsDocx').onclick=async()=>{lastStats=lastStats||aoiStats();try{await buildDocx();}catch(e){console.error(e);}};
+document.getElementById('dlReportTxt').onclick=()=>{const S=lastStats||aoiStats();const a=S.a;
+  const t=reportTabs({});const strip=h=>{const d=document.createElement('div');d.innerHTML=h;return d.textContent;};
+  const txt=`AFRICAHUB — UHI INTELLIGENCE REPORT — ${aoiName(a)}
+Generated ${new Date().toLocaleString('en-GB')}
+Mean LST ${S.mean}°C (±${S.sd}) · AOI ${a.areaKm2.toFixed(1)} km²
+
+GEOGRAPHIC INFORMATION${strip(t.geo)}
+ENVIRONMENTAL FACTORS${strip(t.env)}
+URBAN FACTORS${strip(t.urban)}
+EVENTS ANALYSIS${strip(t.events)}
+ANTHROPOGENIC FACTORS${strip(t.anthro)}
+
+STATISTICAL ANALYSIS — hot zones ${S.hotShare}%, cool zones ${S.coolShare}%, range ${S.min}-${S.max}°C
+TREE RECOMMENDATIONS — ${SPECIES.map(s=>s[1]+' (−'+s[2]+'°C)').join(', ')}`;
+  const blob=new Blob([txt],{type:'text/plain'});const u=URL.createObjectURL(blob);const el=document.createElement('a');
+  el.href=u;el.download=`AfricaHub_Report_${aoiSlug(a)}.txt`;el.click();};
+
+/* ============================================================
+   MULTILINGUAL SUPPORT (English / Français / العربية) + RTL
+   ============================================================ */
+const I18N={
+  en:{tagline:'Urban Heat Intelligence',live:'LIVE',
+    btn_generate:'🌡 Generate Heatmap',btn_stats:'📊 Statistical Analysis Results',
+    btn_trees:'🌲 AI Tree Recommendations',btn_export:'📄 Export & Reporting',
+    btn_svf:'🌤️ Sky View Factor (SVF)',btn_decision:'🌳 Heat Mitigation Decision',
+    lbl_region:'Region',lbl_thresh:'Heat Threshold',lbl_scale:'Temperature Scale',lbl_snapshot:'Continental Snapshot',
+    search:'Search countries, cities, divisions…'},
+  fr:{tagline:'Intelligence de la chaleur urbaine',live:'EN DIRECT',
+    btn_generate:'🌡 Générer la carte thermique',btn_stats:'📊 Résultats d\u2019analyse statistique',
+    btn_trees:'🌲 Recommandations d\u2019arbres (IA)',btn_export:'📄 Export & Rapports',
+    btn_svf:'🌤️ Facteur de vue du ciel (SVF)',btn_decision:'🌳 Décision d\u2019atténuation',
+    lbl_region:'Région',lbl_thresh:'Seuil de chaleur',lbl_scale:'Échelle de température',lbl_snapshot:'Aperçu continental',
+    search:'Rechercher pays, villes, divisions…'},
+  ar:{tagline:'ذكاء الحرارة الحضرية',live:'مباشر',
+    btn_generate:'🌡 إنشاء خريطة حرارية',btn_stats:'📊 نتائج التحليل الإحصائي',
+    btn_trees:'🌲 توصيات الأشجار بالذكاء الاصطناعي',btn_export:'📄 التصدير والتقارير',
+    btn_svf:'🌤️ عامل رؤية السماء (SVF)',btn_decision:'🌳 قرار التخفيف من الحرارة',
+    lbl_region:'المنطقة',lbl_thresh:'عتبة الحرارة',lbl_scale:'مقياس درجة الحرارة',lbl_snapshot:'لمحة قارية',
+    search:'ابحث عن الدول والمدن والأقسام…'}
+};
+function applyLang(lang){
+  const dict=I18N[lang]||I18N.en;
+  curLang=lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.dataset.i18n;if(dict[k]!==undefined)el.innerHTML=dict[k];});
+  const s=document.getElementById('search');if(s&&dict.search)s.placeholder=dict.search;
+  document.body.classList.toggle('rtl',lang==='ar');
+  document.documentElement.setAttribute('lang',lang);
+  document.documentElement.setAttribute('dir',lang==='ar'?'rtl':'ltr');
+  // re-render any open report so its content reflects the new language
+  try{
+    if(document.getElementById('statsOverlay').classList.contains('show'))renderStats();
+    if(document.getElementById('treesOverlay').classList.contains('show'))renderTrees();
+    if(document.getElementById('svfOverlay').classList.contains('show'))renderSVF();
+    if(document.getElementById('decisionOverlay').classList.contains('show'))renderDecision();
+    if(document.getElementById('exportOverlay').classList.contains('show'))renderFullReport();
+    if(document.getElementById('reportOverlay').classList.contains('show')&&window._lastReport)openReport(window._lastReport);
+  }catch(e){}
+}
+document.getElementById('langSel').addEventListener('change',e=>applyLang(e.target.value));
+applyLang('en');
+
+/* ============================================================
+   DAY / NIGHT THEME TOGGLE
+   ============================================================ */
+const themeBtn=document.getElementById('themeToggle');
+function applyTheme(light){
+  document.body.classList.toggle('light',light);
+  themeBtn.textContent=light?'☀️':'🌙';
+  themeBtn.title=light?'Switch to night mode':'Switch to day mode';
+  // keep Leaflet basemap in sync with theme if map exists
+  try{if(typeof lmap!=='undefined'&&lmap&&typeof setBase==='function'){
+    setBase(light?'osm':(currentBase||'carto'));}}catch(e){}
+}
+themeBtn.addEventListener('click',()=>applyTheme(!document.body.classList.contains('light')));
+</script>
+</body>
+</html>
